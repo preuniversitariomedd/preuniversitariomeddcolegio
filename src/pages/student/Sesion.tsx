@@ -7,15 +7,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Eye, EyeOff, Check, X, RotateCcw } from "lucide-react";
+import { Loader2, Eye, EyeOff, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 
-// Simple markdown with LaTeX placeholder (KaTeX can be integrated later for full rendering)
 function RenderContent({ text }: { text: string | null }) {
   if (!text) return null;
-  // Basic: render paragraphs, bold, inline code
-  return <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">{text}</div>;
+  // Render LaTeX: $$...$$ for block, $...$ for inline
+  const html = text
+    .replace(/\$\$([\s\S]*?)\$\$/g, (_, tex) => {
+      try { return `<div class="my-2 text-center">${katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false })}</div>`; }
+      catch { return tex; }
+    })
+    .replace(/\$([^\$\n]+?)\$/g, (_, tex) => {
+      try { return katex.renderToString(tex.trim(), { throwOnError: false }); }
+      catch { return tex; }
+    })
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
+    .replace(/\n/g, '<br/>');
+  return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 function YouTubeEmbed({ url }: { url: string }) {
@@ -58,26 +71,17 @@ function QuizComponent({ sesionId }: { sesionId: string }) {
   const { data: allQuestions, isLoading } = useQuery({
     queryKey: ["quiz-questions", sesionId],
     queryFn: async () => {
-      // Get previously answered
-      const { data: answered } = await supabase
-        .from("quiz_respuestas")
-        .select("pregunta_id")
-        .eq("user_id", profile!.id);
+      const { data: answered } = await supabase.from("quiz_respuestas").select("pregunta_id").eq("user_id", profile!.id);
       const answeredIds = new Set(answered?.map(a => a.pregunta_id) || []);
-
       const { data: all } = await supabase.from("quiz_preguntas").select("*").eq("sesion_id", sesionId);
-      // Filter unanswered, take 10 random
       let available = (all || []).filter(q => !answeredIds.has(q.id));
-      if (available.length === 0) available = all || []; // If all answered, allow re-take
-      const shuffled = available.sort(() => Math.random() - 0.5).slice(0, 10);
-      return shuffled;
+      if (available.length === 0) available = all || [];
+      return available.sort(() => Math.random() - 0.5).slice(0, 10);
     },
     enabled: !!profile,
   });
 
-  useEffect(() => {
-    if (allQuestions) setQuestions(allQuestions);
-  }, [allQuestions]);
+  useEffect(() => { if (allQuestions) setQuestions(allQuestions); }, [allQuestions]);
 
   useEffect(() => {
     if (finished || showResult || questions.length === 0) return;
@@ -85,11 +89,7 @@ function QuizComponent({ sesionId }: { sesionId: string }) {
     setTimeLeft(q?.tiempo_limite || 60);
     const interval = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleAnswer(-1); // Time up
-          return 0;
-        }
+        if (prev <= 1) { clearInterval(interval); handleAnswer(-1); return 0; }
         return prev - 1;
       });
     }, 1000);
@@ -98,12 +98,7 @@ function QuizComponent({ sesionId }: { sesionId: string }) {
 
   const saveMutation = useMutation({
     mutationFn: async ({ preguntaId, correcta, tiempo }: { preguntaId: string; correcta: boolean; tiempo: number }) => {
-      await supabase.from("quiz_respuestas").insert({
-        user_id: profile!.id,
-        pregunta_id: preguntaId,
-        correcta,
-        tiempo_usado: tiempo,
-      });
+      await supabase.from("quiz_respuestas").insert({ user_id: profile!.id, pregunta_id: preguntaId, correcta, tiempo_usado: tiempo });
     },
   });
 
@@ -168,22 +163,22 @@ function QuizComponent({ sesionId }: { sesionId: string }) {
 
       <Card>
         <CardContent className="py-6 quiz-no-copy" onCopy={e => e.preventDefault()}>
-          <p className="text-lg font-medium mb-6">{q.pregunta}</p>
+          <div className="text-lg font-medium mb-6"><RenderContent text={q.pregunta} /></div>
           <div className="grid gap-3">
             {opciones.map((opt: string, i: number) => {
-              let className = "p-4 rounded-lg border text-left transition-all cursor-pointer text-sm";
+              let cls = "p-4 rounded-lg border text-left transition-all cursor-pointer text-sm";
               if (showResult) {
-                if (i === q.respuesta_correcta) className += " border-success bg-success/10";
-                else if (i === selected) className += " border-destructive bg-destructive/10";
-                else className += " border-border opacity-50";
+                if (i === q.respuesta_correcta) cls += " border-success bg-success/10";
+                else if (i === selected) cls += " border-destructive bg-destructive/10";
+                else cls += " border-border opacity-50";
               } else if (selected === i) {
-                className += " border-primary bg-primary/10";
+                cls += " border-primary bg-primary/10";
               } else {
-                className += " border-border hover:border-primary/50";
+                cls += " border-border hover:border-primary/50";
               }
               return (
-                <button key={i} className={className} onClick={() => !showResult && handleAnswer(i)} disabled={showResult}>
-                  <span className="font-bold mr-2">{["A", "B", "C", "D"][i]})</span> {opt}
+                <button key={i} className={cls} onClick={() => !showResult && handleAnswer(i)} disabled={showResult}>
+                  <span className="font-bold mr-2">{["A", "B", "C", "D"][i]})</span> <RenderContent text={opt} />
                 </button>
               );
             })}
@@ -192,7 +187,7 @@ function QuizComponent({ sesionId }: { sesionId: string }) {
             {showResult && q.explicacion && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-4 p-3 rounded-lg bg-muted text-sm">
                 <p className="font-semibold mb-1">Explicación:</p>
-                <p>{q.explicacion}</p>
+                <RenderContent text={q.explicacion} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -205,6 +200,35 @@ function QuizComponent({ sesionId }: { sesionId: string }) {
         </Button>
       )}
     </div>
+  );
+}
+
+function ExerciseCard({ content }: { content: any }) {
+  const [showSolution, setShowSolution] = useState(false);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center justify-between">
+          {content.titulo || "Ejercicio"}
+          {content.solucion && (
+            <Button variant="ghost" size="sm" onClick={() => setShowSolution(!showSolution)}>
+              {showSolution ? <><EyeOff className="h-4 w-4 mr-1" />Ocultar</> : <><Eye className="h-4 w-4 mr-1" />Solución</>}
+            </Button>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <RenderContent text={content.texto} />
+        <AnimatePresence>
+          {showSolution && content.solucion && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="p-3 rounded-lg bg-success/10 border border-success/20">
+              <p className="text-sm font-semibold mb-1 text-success">Solución:</p>
+              <RenderContent text={content.solucion} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -232,7 +256,6 @@ export default function StudentSesion() {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-display font-bold">{sesion.titulo}</h2>
-
       <Tabs defaultValue={tabs[0]?.id}>
         <TabsList className="flex-wrap">
           {tabs.map((t: any) => <TabsTrigger key={t.id} value={t.id}>{t.nombre}</TabsTrigger>)}
@@ -273,34 +296,5 @@ export default function StudentSesion() {
         ))}
       </Tabs>
     </div>
-  );
-}
-
-function ExerciseCard({ content }: { content: any }) {
-  const [showSolution, setShowSolution] = useState(false);
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center justify-between">
-          {content.titulo || "Ejercicio"}
-          {content.solucion && (
-            <Button variant="ghost" size="sm" onClick={() => setShowSolution(!showSolution)}>
-              {showSolution ? <><EyeOff className="h-4 w-4 mr-1" />Ocultar</> : <><Eye className="h-4 w-4 mr-1" />Solución</>}
-            </Button>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <RenderContent text={content.texto} />
-        <AnimatePresence>
-          {showSolution && content.solucion && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="p-3 rounded-lg bg-success/10 border border-success/20">
-              <p className="text-sm font-semibold mb-1 text-success">Solución:</p>
-              <RenderContent text={content.solucion} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </CardContent>
-    </Card>
   );
 }
