@@ -4,20 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, RotateCcw, Trash2, UserPlus } from "lucide-react";
+import { Loader2, RotateCcw, Trash2, UserPlus, BookOpen } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 function calcAge(dob: string | null) {
   if (!dob) return "—";
-  const b = new Date(dob);
-  const now = new Date();
+  const b = new Date(dob), now = new Date();
   const y = now.getFullYear() - b.getFullYear();
   const m = now.getMonth() - b.getMonth();
   const d = now.getDate() - b.getDate();
@@ -30,6 +30,7 @@ export default function AdminEstudiantes() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState<string | null>(null);
   const [form, setForm] = useState({ nombre: "", apellidos: "", cedula: "", fecha_nacimiento: "" });
   const [search, setSearch] = useState("");
 
@@ -40,6 +41,22 @@ export default function AdminEstudiantes() {
         .from("profiles")
         .select("*, user_roles(id, rol, activo)")
         .order("created_at", { ascending: false });
+      return data || [];
+    },
+  });
+
+  const { data: cursos } = useQuery({
+    queryKey: ["cursos-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("cursos").select("id, titulo").order("orden");
+      return data || [];
+    },
+  });
+
+  const { data: inscripciones } = useQuery({
+    queryKey: ["all-inscripciones"],
+    queryFn: async () => {
+      const { data } = await supabase.from("inscripciones").select("user_id, curso_id");
       return data || [];
     },
   });
@@ -64,39 +81,27 @@ export default function AdminEstudiantes() {
 
   const resetMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { data, error } = await supabase.functions.invoke("manage-users", {
-        body: { action: "resetear", user_id: userId },
-      });
+      const { data, error } = await supabase.functions.invoke("manage-users", { body: { action: "resetear", user_id: userId } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
     },
-    onSuccess: () => {
-      toast({ title: "Contraseña reseteada a 123*789*h" });
-      qc.invalidateQueries({ queryKey: ["admin-students"] });
-    },
+    onSuccess: () => { toast({ title: "Contraseña reseteada a 123*789*h" }); qc.invalidateQueries({ queryKey: ["admin-students"] }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { data, error } = await supabase.functions.invoke("manage-users", {
-        body: { action: "eliminar", user_id: userId },
-      });
+      const { data, error } = await supabase.functions.invoke("manage-users", { body: { action: "eliminar", user_id: userId } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
     },
-    onSuccess: () => {
-      toast({ title: "Estudiante eliminado" });
-      qc.invalidateQueries({ queryKey: ["admin-students"] });
-    },
+    onSuccess: () => { toast({ title: "Estudiante eliminado" }); qc.invalidateQueries({ queryKey: ["admin-students"] }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ userId, activo }: { userId: string; activo: boolean }) => {
-      const { data, error } = await supabase.functions.invoke("manage-users", {
-        body: { action: "toggle_activo", user_id: userId, activo },
-      });
+      const { data, error } = await supabase.functions.invoke("manage-users", { body: { action: "toggle_activo", user_id: userId, activo } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
     },
@@ -113,9 +118,25 @@ export default function AdminEstudiantes() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  const assignCourseMutation = useMutation({
+    mutationFn: async ({ userId, cursoId, assign }: { userId: string; cursoId: string; assign: boolean }) => {
+      if (assign) {
+        const { error } = await supabase.from("inscripciones").insert({ user_id: userId, curso_id: cursoId });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("inscripciones").delete().eq("user_id", userId).eq("curso_id", cursoId);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["all-inscripciones"] }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const filtered = students?.filter(s =>
     !search || s.nombre.toLowerCase().includes(search.toLowerCase()) || s.cedula.includes(search) || s.apellidos.toLowerCase().includes(search.toLowerCase())
   );
+
+  const getUserCourses = (userId: string) => inscripciones?.filter(i => i.user_id === userId).map(i => i.curso_id) || [];
 
   return (
     <div className="space-y-6">
@@ -158,6 +179,7 @@ export default function AdminEstudiantes() {
                     <TableHead>Nombre</TableHead>
                     <TableHead>Edad</TableHead>
                     <TableHead>Rol</TableHead>
+                    <TableHead>Cursos</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead>Acciones</TableHead>
                   </TableRow>
@@ -165,6 +187,7 @@ export default function AdminEstudiantes() {
                 <TableBody>
                   {filtered?.map(s => {
                     const role = (s.user_roles as any)?.[0] || (s.user_roles as any);
+                    const userCourses = getUserCourses(s.id);
                     return (
                       <TableRow key={s.id}>
                         <TableCell className="font-mono text-sm">{s.cedula}</TableCell>
@@ -182,9 +205,30 @@ export default function AdminEstudiantes() {
                           ) : <Badge variant="secondary">Sin rol</Badge>}
                         </TableCell>
                         <TableCell>
-                          {role?.id ? (
-                            <Switch checked={role.activo} onCheckedChange={v => toggleMutation.mutate({ userId: s.id, activo: v })} />
-                          ) : "—"}
+                          <Dialog open={assignOpen === s.id} onOpenChange={v => setAssignOpen(v ? s.id : null)}>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <BookOpen className="h-3 w-3 mr-1" />{userCourses.length}
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader><DialogTitle>Asignar Cursos — {s.nombre}</DialogTitle></DialogHeader>
+                              <div className="space-y-3">
+                                {cursos?.map(c => {
+                                  const enrolled = userCourses.includes(c.id);
+                                  return (
+                                    <div key={c.id} className="flex items-center gap-3">
+                                      <Checkbox checked={enrolled} onCheckedChange={v => assignCourseMutation.mutate({ userId: s.id, cursoId: c.id, assign: !!v })} />
+                                      <span className="text-sm">{c.titulo}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                        <TableCell>
+                          {role?.id ? <Switch checked={role.activo} onCheckedChange={v => toggleMutation.mutate({ userId: s.id, activo: v })} /> : "—"}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -212,7 +256,7 @@ export default function AdminEstudiantes() {
                     );
                   })}
                   {(!filtered || filtered.length === 0) && (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No hay estudiantes registrados</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No hay estudiantes registrados</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
