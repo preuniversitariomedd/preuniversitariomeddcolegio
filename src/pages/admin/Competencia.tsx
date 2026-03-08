@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Plus, Play, Square, Trophy, Users, Clock, Zap, Copy, Trash2, Import,
-  Snowflake, Divide, X2, ArrowRight, SkipForward, Megaphone, CheckCircle, XCircle
+  Snowflake, Divide, ArrowRight, SkipForward, Megaphone, CheckCircle, XCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";

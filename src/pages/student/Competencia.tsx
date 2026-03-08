@@ -400,7 +400,7 @@ export default function StudentCompetencia() {
             </TooltipTrigger><TooltipContent>Eliminar 2 opciones</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
               <Button variant="outline" size="sm" onClick={() => useMyPowerup("x2")} disabled={myPowerups.x2 <= 0} className="gap-1">
-                <X2 className="h-4 w-4 text-green-400" /> {myPowerups.x2}
+                <Zap className="h-4 w-4 text-green-400" /> {myPowerups.x2}
               </Button>
             </TooltipTrigger><TooltipContent>Duplicar puntos</TooltipContent></Tooltip>
           </div>
