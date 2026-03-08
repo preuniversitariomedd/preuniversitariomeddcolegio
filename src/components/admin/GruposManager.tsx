@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronDown, ChevronUp, Users, Pencil, Search } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Users, Search, Copy, Download, Upload } from "lucide-react";
+import { downloadCSV } from "@/lib/exportUtils";
 
 export default function GruposManager() {
   const { toast } = useToast();
@@ -19,7 +20,6 @@ export default function GruposManager() {
   const [openNew, setOpenNew] = useState(false);
   const [newForm, setNewForm] = useState({ nombre: "", descripcion: "" });
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [selectedForAdd, setSelectedForAdd] = useState<Set<string>>(new Set());
 
@@ -68,6 +68,29 @@ export default function GruposManager() {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: async (grupoId: string) => {
+      const grupo = (grupos || []).find((g: any) => g.id === grupoId);
+      if (!grupo) throw new Error("Grupo no encontrado");
+      const { data: newGrupo, error } = await supabase.from("grupos").insert({
+        nombre: `${grupo.nombre} (Copia)`,
+        descripcion: grupo.descripcion,
+      }).select().single();
+      if (error) throw error;
+      // Copy members
+      const members = (grupo.grupo_miembros || []).map((m: any) => m.user_id);
+      if (members.length > 0) {
+        const rows = members.map((user_id: string) => ({ grupo_id: newGrupo.id, user_id }));
+        await supabase.from("grupo_miembros").insert(rows);
+      }
+    },
+    onSuccess: () => {
+      toast({ title: "Grupo duplicado" });
+      qc.invalidateQueries({ queryKey: ["grupos"] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const addMembersMutation = useMutation({
     mutationFn: async ({ grupoId, userIds }: { grupoId: string; userIds: string[] }) => {
       const rows = userIds.map((user_id) => ({ grupo_id: grupoId, user_id }));
@@ -90,6 +113,62 @@ export default function GruposManager() {
       qc.invalidateQueries({ queryKey: ["grupos"] });
     },
   });
+
+  const importMembersMutation = useMutation({
+    mutationFn: async ({ grupoId, cedulas }: { grupoId: string; cedulas: string[] }) => {
+      // Find students by cedula
+      const matched = (allStudents || []).filter((s: any) => cedulas.includes(s.cedula));
+      if (matched.length === 0) throw new Error("No se encontraron estudiantes con esas cédulas");
+      const rows = matched.map((s: any) => ({ grupo_id: grupoId, user_id: s.id }));
+      const { error } = await supabase.from("grupo_miembros").upsert(rows, { onConflict: "grupo_id,user_id", ignoreDuplicates: true });
+      if (error) throw error;
+      return matched.length;
+    },
+    onSuccess: (count) => {
+      toast({ title: `${count} miembros importados` });
+      qc.invalidateQueries({ queryKey: ["grupos"] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const exportMembers = (grupo: any) => {
+    const members = (grupo.grupo_miembros || []).map((m: any) => ({
+      Nombre: m.profiles.nombre,
+      Apellidos: m.profiles.apellidos,
+      Cédula: m.profiles.cedula,
+    }));
+    downloadCSV(members, `grupo_${grupo.nombre}`);
+    toast({ title: "Exportado" });
+  };
+
+  const handleImportCSV = (grupoId: string) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv,.txt";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      // Extract cedulas from CSV - look for cedula-like values (digits)
+      const lines = text.split(/[\n\r]+/).filter(Boolean);
+      const cedulas: string[] = [];
+      for (const line of lines) {
+        const parts = line.split(/[,;\t]+/);
+        for (const part of parts) {
+          const cleaned = part.trim().replace(/"/g, "");
+          if (/^\d{5,15}$/.test(cleaned)) {
+            cedulas.push(cleaned);
+          }
+        }
+      }
+      if (cedulas.length === 0) {
+        toast({ title: "No se encontraron cédulas válidas en el archivo", variant: "destructive" });
+        return;
+      }
+      importMembersMutation.mutate({ grupoId, cedulas });
+    };
+    input.click();
+  };
 
   return (
     <div className="space-y-6">
@@ -129,6 +208,15 @@ export default function GruposManager() {
                     <div>
                       <CardTitle className="text-lg flex items-center gap-2">
                         <Users className="h-4 w-4" /> {grupo.nombre}
+                        <Button variant="ghost" size="icon" className="h-6 w-6" title="Duplicar grupo" onClick={() => duplicateMutation.mutate(grupo.id)}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" title="Exportar miembros CSV" onClick={() => exportMembers(grupo)}>
+                          <Download className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" title="Importar miembros CSV" onClick={() => handleImportCSV(grupo.id)}>
+                          <Upload className="h-3 w-3" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => { if (confirm(`¿Eliminar grupo "${grupo.nombre}"?`)) deleteMutation.mutate(grupo.id); }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -140,7 +228,6 @@ export default function GruposManager() {
 
                 <CollapsibleContent>
                   <CardContent className="space-y-4">
-                    {/* Current members */}
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Miembros actuales</h4>
                       <div className="flex flex-wrap gap-2">
@@ -156,7 +243,6 @@ export default function GruposManager() {
                       </div>
                     </div>
 
-                    {/* Add members */}
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Agregar miembros</h4>
                       <div className="flex gap-2 mb-2">

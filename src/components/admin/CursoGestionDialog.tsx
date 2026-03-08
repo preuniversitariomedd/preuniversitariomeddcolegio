@@ -184,6 +184,20 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
         </Select>
       </div>
 
+      {/* Enrollment counter for selected group */}
+      {selectedGrupo !== "all" && grupoMemberIds && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+          <Users className="h-4 w-4 text-primary" />
+          <div className="text-sm">
+            <span className="font-medium">{(grupos?.find((g: any) => g.id === selectedGrupo) as any)?.nombre}:</span>
+            {" "}
+            <Badge variant="default" className="mx-1">{Array.from(grupoMemberIds).filter((id) => enrolledSet.has(id as string)).length} inscritos</Badge>
+            <Badge variant="secondary" className="mx-1">{Array.from(grupoMemberIds).filter((id) => !enrolledSet.has(id as string)).length} faltan</Badge>
+            <span className="text-muted-foreground">de {grupoMemberIds.size} total</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={selectAll}>Marcar todos</Button>
         <Button size="sm" variant="outline" onClick={clearAll}>Limpiar</Button>
