@@ -102,10 +102,18 @@ export default function StudentLayout() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => setDark(!dark)}>
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
+          <span className="text-sm text-muted-foreground">{profile?.nombre}</span>
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-4 w-4 text-primary" />
+            )}
+          </div>
           <Button variant="ghost" size="sm" onClick={signOut} className="text-destructive">Salir</Button>
         </div>
       </header>
