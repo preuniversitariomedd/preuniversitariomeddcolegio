@@ -5,52 +5,55 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Lock, CheckCircle, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useViewAsStudent } from "@/components/StudentLayout";
 
 export default function StudentCursos() {
   const { profile } = useAuth();
+  const viewAsId = useViewAsStudent();
+  const targetId = viewAsId || profile?.id;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["student-cursos-sesiones"],
+    queryKey: ["student-cursos-sesiones", targetId],
     queryFn: async () => {
       const { data: inscr } = await supabase
         .from("inscripciones")
         .select("cursos(id, titulo, color, sesiones(id, titulo, orden, estado))")
-        .eq("user_id", profile!.id);
+        .eq("user_id", targetId!);
       return inscr?.map(i => (i.cursos as any)) || [];
     },
-    enabled: !!profile,
+    enabled: !!targetId,
   });
 
   const { data: progreso } = useQuery({
-    queryKey: ["student-progreso"],
+    queryKey: ["student-progreso", targetId],
     queryFn: async () => {
-      const { data } = await supabase.from("progreso_estudiante").select("sesion_id, porcentaje").eq("user_id", profile!.id);
+      const { data } = await supabase.from("progreso_estudiante").select("sesion_id, porcentaje").eq("user_id", targetId!);
       const map: Record<string, number> = {};
       data?.forEach(p => { map[p.sesion_id] = p.porcentaje || 0; });
       return map;
     },
-    enabled: !!profile,
+    enabled: !!targetId,
   });
 
   // Per-student session overrides
   const { data: overrides } = useQuery({
-    queryKey: ["student-session-overrides"],
+    queryKey: ["student-session-overrides", targetId],
     queryFn: async () => {
-      const { data } = await supabase.from("sesiones_usuarios").select("sesion_id, desbloqueada").eq("user_id", profile!.id);
+      const { data } = await supabase.from("sesiones_usuarios").select("sesion_id, desbloqueada").eq("user_id", targetId!);
       const map: Record<string, boolean> = {};
       data?.forEach(r => { map[r.sesion_id] = r.desbloqueada; });
       return map;
     },
-    enabled: !!profile,
+    enabled: !!targetId,
   });
 
   const { data: quizScores } = useQuery({
-    queryKey: ["student-quiz-scores"],
+    queryKey: ["student-quiz-scores", targetId],
     queryFn: async () => {
       const { data: respuestas } = await supabase
         .from("quiz_respuestas")
         .select("pregunta_id, correcta, quiz_preguntas(sesion_id)")
-        .eq("user_id", profile!.id);
+        .eq("user_id", targetId!);
       const sessionScores: Record<string, { correct: number; total: number }> = {};
       respuestas?.forEach(r => {
         const sid = (r.quiz_preguntas as any)?.sesion_id;
@@ -61,7 +64,7 @@ export default function StudentCursos() {
       });
       return sessionScores;
     },
-    enabled: !!profile,
+    enabled: !!targetId,
   });
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
