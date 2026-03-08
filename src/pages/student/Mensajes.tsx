@@ -12,6 +12,9 @@ import { useViewAsStudent } from "@/components/StudentLayout";
 
 export default function StudentMensajes() {
   const { user } = useAuth();
+  const viewAsId = useViewAsStudent();
+  const targetId = viewAsId || user?.id;
+  const isViewingOther = !!viewAsId;
   const qc = useQueryClient();
   const [newMsg, setNewMsg] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -28,15 +31,15 @@ export default function StudentMensajes() {
   });
 
   const { data: messages } = useQuery({
-    queryKey: ["student-messages", user?.id],
+    queryKey: ["student-messages", targetId],
     queryFn: async () => {
       const { data } = await supabase
         .from("mensajes")
         .select("*")
-        .or(`remitente_id.eq.${user!.id},destinatario_id.eq.${user!.id}`)
+        .or(`remitente_id.eq.${targetId},destinatario_id.eq.${targetId}`)
         .order("created_at", { ascending: true })
         .limit(200);
-      if (data) {
+      if (data && !isViewingOther) {
         const unread = data.filter(m => m.destinatario_id === user!.id && !m.leido);
         if (unread.length > 0) {
           await supabase.from("mensajes").update({ leido: true }).in("id", unread.map(m => m.id));
@@ -45,7 +48,7 @@ export default function StudentMensajes() {
       }
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!targetId,
     refetchInterval: 10000,
   });
 
@@ -93,8 +96,8 @@ export default function StudentMensajes() {
           <ScrollArea className="h-full p-4">
             <div className="space-y-3">
               {messages?.map(m => (
-                <div key={m.id} className={`flex ${m.remitente_id === user?.id ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.remitente_id === user?.id ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                <div key={m.id} className={`flex ${m.remitente_id === targetId ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.remitente_id === targetId ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                     <p>{m.contenido}</p>
                     {m.archivo_url && (
                       <div className="mt-2">
