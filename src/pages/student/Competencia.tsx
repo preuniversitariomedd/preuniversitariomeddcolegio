@@ -384,7 +384,7 @@ export default function StudentCompetencia() {
         <AnimatePresence>
           {showResult && (
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }}>
-              <Card className={showResult.correct ? "border-green-500 bg-green-500/5" : "border-destructive bg-destructive/5"}>
+              <Card className={showResult.correct ? "border-accent bg-accent/5" : "border-destructive bg-destructive/5"}>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold">{showResult.correct ? "✅ ¡Correcto!" : "❌ Incorrecto"}</p>
                   <p className="text-lg font-mono">{showResult.points > 0 ? "+" : ""}{showResult.points} puntos</p>
@@ -464,7 +464,7 @@ export default function StudentCompetencia() {
                 const p = leaderboard[pos];
                 if (!p) return null;
                 const heights = ["h-28", "h-20", "h-16"];
-                const colors = ["bg-yellow-500", "bg-gray-400", "bg-amber-700"];
+                const colors = ["bg-neon-orange", "bg-muted-foreground", "bg-progress"];
                 const medals = ["🥇", "🥈", "🥉"];
                 const actualPos = pos === 1 ? 0 : pos === 0 ? 1 : 2;
                 return (
