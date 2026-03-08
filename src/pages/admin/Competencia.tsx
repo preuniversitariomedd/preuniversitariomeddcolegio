@@ -394,19 +394,35 @@ export default function AdminCompetencia() {
               {(comp.estado === "pregunta" || comp.estado === "resultados") && (
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Zap className="h-4 w-4 text-yellow-500" /> Potenciadores (Admin)</CardTitle></CardHeader>
-                  <CardContent className="flex flex-wrap gap-2">
-                    <Tooltip><TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => sendPowerUp("congelar")} className="gap-1"><Snowflake className="h-4 w-4 text-blue-400" /> Congelar</Button>
-                    </TooltipTrigger><TooltipContent>Congela el tiempo para todos</TooltipContent></Tooltip>
-                    <Tooltip><TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => sendPowerUp("50_50")} className="gap-1"><Divide className="h-4 w-4 text-orange-400" /> 50/50</Button>
-                    </TooltipTrigger><TooltipContent>Elimina 2 opciones incorrectas para todos</TooltipContent></Tooltip>
-                    <Tooltip><TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => sendPowerUp("x2")} className="gap-1"><Zap className="h-4 w-4 text-green-400" /> x2 Puntos</Button>
-                    </TooltipTrigger><TooltipContent>Duplica puntos para la siguiente correcta (todos)</TooltipContent></Tooltip>
-                    <Tooltip><TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => sendPowerUp("x5_penalty")} className="gap-1 text-destructive"><XCircle className="h-4 w-4" /> x5 Penalización</Button>
-                    </TooltipTrigger><TooltipContent>x5 puntos negativos por incorrecta (todos)</TooltipContent></Tooltip>
+                  <CardContent className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Tooltip><TooltipTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => sendPowerUp("congelar")} className="gap-1"><Snowflake className="h-4 w-4 text-blue-400" /> Congelar</Button>
+                      </TooltipTrigger><TooltipContent>Congela el tiempo para todos</TooltipContent></Tooltip>
+                      <Tooltip><TooltipTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => sendPowerUp("50_50")} className="gap-1"><Divide className="h-4 w-4 text-orange-400" /> 50/50</Button>
+                      </TooltipTrigger><TooltipContent>Elimina 2 opciones incorrectas para todos</TooltipContent></Tooltip>
+                      <Tooltip><TooltipTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => sendPowerUp("x2")} className="gap-1"><Zap className="h-4 w-4 text-green-400" /> x2 Puntos</Button>
+                      </TooltipTrigger><TooltipContent>Duplica puntos para la siguiente correcta (todos)</TooltipContent></Tooltip>
+                      <Tooltip><TooltipTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => sendPowerUp("x5_penalty")} className="gap-1 text-destructive"><XCircle className="h-4 w-4" /> x5 Penalización</Button>
+                      </TooltipTrigger><TooltipContent>x5 puntos negativos por incorrecta (todos)</TooltipContent></Tooltip>
+                    </div>
+                    {/* Targeted skip-question power-up */}
+                    <div className="border-t pt-3">
+                      <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1"><SkipForward className="h-3 w-3" /> Pasar pregunta a un estudiante</p>
+                      <div className="flex flex-wrap gap-1">
+                        {participantes.map(p => (
+                          <Tooltip key={p.id}><TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 hover:bg-primary/10"
+                              onClick={() => sendPowerUp("skip", p.user_id)}>
+                              <SkipForward className="h-3 w-3 text-pink" /> {p.profiles?.nombre}
+                            </Button>
+                          </TooltipTrigger><TooltipContent>Pasar pregunta a {p.profiles?.nombre} {p.profiles?.apellidos}</TooltipContent></Tooltip>
+                        ))}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -457,13 +473,68 @@ export default function AdminCompetencia() {
                       {leaderboard.map((p, i) => (
                         <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded hover:bg-muted">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm w-6">{i + 1}</span>
+                            <span className="font-bold text-sm w-6">{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
                             <span className="text-sm">{p.profiles?.nombre} {p.profiles?.apellidos}</span>
                             {p.racha >= 3 && <Badge variant="secondary" className="text-[10px]">🔥 {p.racha}</Badge>}
                           </div>
                           <span className="font-mono text-sm">{p.puntos}</span>
                         </div>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* History: Stats for finalized competitions */}
+              {comp.estado === "finalizada" && respuestas.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm">📊 Estadísticas Detalladas</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Per question stats */}
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Por pregunta</p>
+                      <div className="space-y-2">
+                        {preguntas.map((q, i) => {
+                          const qResps = respuestas.filter(r => r.pregunta_id === q.id);
+                          const qCorrect = qResps.filter(r => r.correcta).length;
+                          const avgTime = qResps.length > 0 ? Math.round(qResps.reduce((s, r) => s + r.tiempo_usado, 0) / qResps.length) : 0;
+                          const pct = qResps.length > 0 ? Math.round((qCorrect / qResps.length) * 100) : 0;
+                          return (
+                            <div key={q.id} className="flex items-center gap-3 text-sm">
+                              <Badge variant="outline" className="shrink-0 w-8 justify-center">{i + 1}</Badge>
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate text-xs">{q.pregunta}</p>
+                                <Progress value={pct} className="h-1.5 mt-1" />
+                              </div>
+                              <span className="text-xs text-muted-foreground shrink-0">{pct}% · {avgTime}s</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* Per student stats */}
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Por estudiante</p>
+                      <div className="space-y-1 max-h-48 overflow-auto">
+                        {leaderboard.map((p, i) => {
+                          const pResps = respuestas.filter(r => r.user_id === p.user_id);
+                          const pCorrect = pResps.filter(r => r.correcta).length;
+                          const avgTime = pResps.length > 0 ? Math.round(pResps.reduce((s, r) => s + r.tiempo_usado, 0) / pResps.length) : 0;
+                          return (
+                            <div key={p.id} className="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-muted/50">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 text-xs font-bold">{i + 1}</span>
+                                <span>{p.profiles?.nombre} {p.profiles?.apellidos}</span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <span>{pCorrect}/{pResps.length} ✓</span>
+                                <span>~{avgTime}s</span>
+                                <span className="font-mono font-bold text-foreground">{p.puntos}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
