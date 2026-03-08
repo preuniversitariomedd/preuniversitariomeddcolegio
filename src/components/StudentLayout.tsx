@@ -4,12 +4,19 @@ import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon,
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect, createContext, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { playNotification } from "@/lib/sounds";
 import logoMedd from "@/assets/logo-medd.png";
+
+// Context to share the "viewed as" student ID with child pages
+const ViewAsStudentContext = createContext<string | null>(null);
+export function useViewAsStudent() {
+  return useContext(ViewAsStudentContext);
+}
 
 const studentLinks = [
   { title: "Inicio", url: "/student", icon: LayoutDashboard },
@@ -26,6 +33,20 @@ export default function StudentLayout() {
   const location = useLocation();
   const { toast } = useToast();
   const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
+  const [viewAsStudentId, setViewAsStudentId] = useState<string | null>(null);
+
+  // Fetch students list for admin preview selector
+  const { data: students } = useQuery({
+    queryKey: ["all-students-for-selector"],
+    queryFn: async () => {
+      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("rol", "estudiante").eq("activo", true);
+      if (!roles?.length) return [];
+      const ids = roles.map(r => r.user_id);
+      const { data: profiles } = await supabase.from("profiles").select("id, nombre, apellidos").in("id", ids).order("apellidos");
+      return profiles || [];
+    },
+    enabled: isAdminPreview,
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
