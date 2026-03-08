@@ -441,6 +441,7 @@ export type Database = {
       sesiones: {
         Row: {
           curso_id: string
+          descripcion: string | null
           estado: string | null
           id: string
           orden: number
@@ -448,6 +449,7 @@ export type Database = {
         }
         Insert: {
           curso_id: string
+          descripcion?: string | null
           estado?: string | null
           id?: string
           orden: number
@@ -455,6 +457,7 @@ export type Database = {
         }
         Update: {
           curso_id?: string
+          descripcion?: string | null
           estado?: string | null
           id?: string
           orden?: number
