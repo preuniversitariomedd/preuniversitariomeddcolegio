@@ -95,7 +95,10 @@ export default function StudentLayout() {
       <header className="hidden md:flex h-14 items-center border-b border-border px-6 bg-card justify-between">
         <div className="flex items-center gap-4">
           <img src={logoMedd} alt="MEDD" className="w-8 h-8 rounded-full object-cover" />
-          <h1 className="font-display font-bold text-primary text-lg">MEDD</h1>
+          <div>
+            <h1 className="font-display font-bold text-primary text-lg leading-tight">MEDD</h1>
+            <p className="text-[9px] text-muted-foreground leading-tight">Metodología Educativa Didáctica a Distancia</p>
+          </div>
           <nav className="flex gap-1">
             {studentLinks.map(item => (
               <NavLink key={item.url} to={item.url} end={item.url === "/student"}
