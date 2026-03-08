@@ -117,24 +117,30 @@ export default function StudentMensajes() {
             </div>
           </ScrollArea>
         </CardContent>
-        <div className="p-4 border-t border-border space-y-2">
-          {uploading && <Progress value={uploadProgress} className="h-2" />}
-          {attachedFile && (
-            <div className="flex items-center gap-2 text-xs bg-muted p-2 rounded">
-              <Paperclip className="h-3 w-3" />
-              <span className="truncate flex-1">{attachedFile.name}</span>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAttachedFile(null)}><X className="h-3 w-3" /></Button>
-            </div>
-          )}
-          <div className="flex gap-2">
-            <input ref={fileRef} type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]); }} />
-            <Button variant="ghost" size="icon" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Escribe un mensaje..." className="flex-1" onKeyDown={e => e.key === "Enter" && sendMutation.mutate()} />
-            <Button variant="neon" size="icon" onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending}><Send className="h-4 w-4" /></Button>
+        {isViewingOther ? (
+          <div className="p-4 border-t border-border text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+            <Eye className="h-4 w-4" /> Solo lectura — estás viendo los mensajes de otro estudiante
           </div>
-        </div>
+        ) : (
+          <div className="p-4 border-t border-border space-y-2">
+            {uploading && <Progress value={uploadProgress} className="h-2" />}
+            {attachedFile && (
+              <div className="flex items-center gap-2 text-xs bg-muted p-2 rounded">
+                <Paperclip className="h-3 w-3" />
+                <span className="truncate flex-1">{attachedFile.name}</span>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAttachedFile(null)}><X className="h-3 w-3" /></Button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input ref={fileRef} type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]); }} />
+              <Button variant="ghost" size="icon" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Escribe un mensaje..." className="flex-1" onKeyDown={e => e.key === "Enter" && sendMutation.mutate()} />
+              <Button variant="neon" size="icon" onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending}><Send className="h-4 w-4" /></Button>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );
