@@ -32,17 +32,25 @@ export default function StudentCursos() {
     enabled: !!profile,
   });
 
-  // Check quiz scores per session to determine if student can unlock
+  // Per-student session overrides
+  const { data: overrides } = useQuery({
+    queryKey: ["student-session-overrides"],
+    queryFn: async () => {
+      const { data } = await supabase.from("sesiones_usuarios").select("sesion_id, desbloqueada").eq("user_id", profile!.id);
+      const map: Record<string, boolean> = {};
+      data?.forEach(r => { map[r.sesion_id] = r.desbloqueada; });
+      return map;
+    },
+    enabled: !!profile,
+  });
+
   const { data: quizScores } = useQuery({
     queryKey: ["student-quiz-scores"],
     queryFn: async () => {
-      // Get all quiz questions grouped by session
       const { data: respuestas } = await supabase
         .from("quiz_respuestas")
         .select("pregunta_id, correcta, quiz_preguntas(sesion_id)")
         .eq("user_id", profile!.id);
-      
-      // Calculate score per session
       const sessionScores: Record<string, { correct: number; total: number }> = {};
       respuestas?.forEach(r => {
         const sid = (r.quiz_preguntas as any)?.sesion_id;
@@ -59,8 +67,11 @@ export default function StudentCursos() {
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   const canAccess = (s: any) => {
+    // Individual override takes priority
+    if (overrides?.[s.id] !== undefined) return overrides[s.id];
+    // Global state
     if (s.estado === "abierta") return true;
-    // Check if student scored >= 80% on quiz for this session
+    // Quiz score >= 80%
     const score = quizScores?.[s.id];
     if (score && score.total > 0 && (score.correct / score.total) >= 0.8) return true;
     return false;
