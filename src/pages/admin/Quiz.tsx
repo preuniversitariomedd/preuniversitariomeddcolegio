@@ -323,6 +323,29 @@ export default function AdminQuiz() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            <Dialog open={openCopyFrom} onOpenChange={v => { setOpenCopyFrom(v); if (!v) setCopyFromSesion(""); }}>
+              <DialogTrigger asChild><Button variant="outline" size="sm"><Copy className="h-4 w-4 mr-1" />De otra sesión</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Importar preguntas de otra sesión</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Sesión origen</Label>
+                    <Select value={copyFromSesion} onValueChange={setCopyFromSesion}>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar sesión" /></SelectTrigger>
+                      <SelectContent>
+                        {sesiones?.filter(s => s.id !== sesionId).map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.orden}. {s.titulo} ({(s.cursos as any)?.titulo})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="neon" className="w-full" onClick={() => copyFromMutation.mutate()} disabled={copyFromMutation.isPending || !copyFromSesion}>
+                    {copyFromMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Importar preguntas"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
       </div>
