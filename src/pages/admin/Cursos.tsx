@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, ChevronDown, ChevronUp, Lock, Unlock, Pencil, Trash2, Copy } from "lucide-react";
+import { Loader2, Plus, ChevronDown, ChevronUp, Lock, Unlock, Pencil, Trash2, Copy, Settings2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import CursoGestionDialog from "@/components/admin/CursoGestionDialog";
 
 export default function AdminCursos() {
   const { toast } = useToast();
@@ -25,6 +26,7 @@ export default function AdminCursos() {
   const [editCursoForm, setEditCursoForm] = useState({ titulo: "", descripcion: "" });
   const [editSesionId, setEditSesionId] = useState<string | null>(null);
   const [editSesionForm, setEditSesionForm] = useState({ titulo: "", descripcion: "" });
+  const [gestionCurso, setGestionCurso] = useState<{ id: string; titulo: string } | null>(null);
 
   const { data: cursos, isLoading } = useQuery({
     queryKey: ["admin-cursos"],
@@ -278,6 +280,9 @@ export default function AdminCursos() {
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditCursoId(curso.id); setEditCursoForm({ titulo: curso.titulo, descripcion: curso.descripcion || "" }); }}>
                         <Pencil className="h-3 w-3" />
                       </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" title="Gestionar curso" onClick={() => setGestionCurso({ id: curso.id, titulo: curso.titulo })}>
+                        <Settings2 className="h-3 w-3" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6" title="Duplicar curso" onClick={() => { if (confirm("¿Duplicar este curso con todo su contenido (sin inscripciones)?")) duplicateCursoMutation.mutate(curso.id); }}>
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -333,6 +338,12 @@ export default function AdminCursos() {
           </Card>
         ))}
       </div>
+
+      <CursoGestionDialog
+        open={!!gestionCurso}
+        onOpenChange={(v) => { if (!v) setGestionCurso(null); }}
+        curso={gestionCurso}
+      />
     </div>
   );
 }

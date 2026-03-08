@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
-  LayoutDashboard, Users, BookOpen, FileText, HelpCircle, Library, MessageSquare, LogOut, Moon, Sun, Zap, User, Eye,
+  LayoutDashboard, Users, BookOpen, FileText, HelpCircle, Library, MessageSquare, LogOut, Moon, Sun, Zap, User, Eye, UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -16,6 +16,7 @@ const adminLinks = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Estudiantes", url: "/admin/estudiantes", icon: Users },
   { title: "Cursos", url: "/admin/cursos", icon: BookOpen },
+  { title: "Grupos", url: "/admin/grupos", icon: UsersRound },
   { title: "Contenido", url: "/admin/contenido", icon: FileText },
   { title: "Quiz", url: "/admin/quiz", icon: HelpCircle },
   { title: "Competencia", url: "/admin/competencia", icon: Zap },
