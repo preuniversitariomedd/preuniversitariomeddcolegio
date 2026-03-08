@@ -41,7 +41,7 @@ serve(async (req) => {
 
   try {
     if (action === "crear") {
-      const { cedula, nombre, apellidos, fecha_nacimiento } = payload;
+      const { cedula, nombre, apellidos, fecha_nacimiento, colegio } = payload;
       const email = `${cedula}@medd.local`;
       const password = "123*789*h";
 
@@ -60,6 +60,7 @@ serve(async (req) => {
         nombre,
         apellidos,
         fecha_nacimiento: fecha_nacimiento || null,
+        colegio: colegio || null,
         password_changed: false,
       });
 
