@@ -12,7 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, Trash2, UserPlus, BookOpen, Settings2 } from "lucide-react";
+import { Loader2, RotateCcw, Trash2, UserPlus, BookOpen, Settings2, Download } from "lucide-react";
+import { downloadCSV } from "@/lib/exportUtils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 function calcAge(dob: string | null) {
