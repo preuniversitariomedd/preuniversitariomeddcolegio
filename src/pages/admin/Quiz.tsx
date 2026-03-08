@@ -95,7 +95,7 @@ export default function AdminQuiz() {
     onSuccess: () => {
       toast({ title: "Pregunta añadida" });
       setOpenAdd(false);
-      setForm({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60" });
+      setForm({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60", imagen_url: "" });
       qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
