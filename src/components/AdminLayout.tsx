@@ -39,7 +39,13 @@ function AdminSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent className="flex flex-col h-full">
         <div className="p-4 border-b border-sidebar-border flex items-center gap-3">
-          <img src={logoMedd} alt="MEDD" className="w-9 h-9 rounded-full object-cover shrink-0" />
+          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0 border border-primary/20">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-5 w-5 text-primary" />
+            )}
+          </div>
           {!collapsed && (
             <div>
               <h2 className="font-display font-bold text-primary text-lg leading-tight">MEDD</h2>
@@ -121,9 +127,21 @@ export default function AdminLayout() {
       <div className="min-h-screen flex w-full">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center border-b border-border px-4 bg-card">
-            <SidebarTrigger />
-            <h1 className="ml-3 font-display font-semibold text-lg">Panel de Administración</h1>
+          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card">
+            <div className="flex items-center">
+              <SidebarTrigger />
+              <h1 className="ml-3 font-display font-semibold text-lg">Panel de Administración</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground hidden sm:block">{profile?.nombre} {profile?.apellidos}</span>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="h-4 w-4 text-primary" />
+                )}
+              </div>
+            </div>
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto">
             <Outlet />
