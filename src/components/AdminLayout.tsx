@@ -8,6 +8,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import logoMedd from "@/assets/logo-medd.png";
 
 const adminLinks = [
@@ -82,6 +84,31 @@ export default function AdminLayout() {
   if (!user) return <Navigate to="/login" replace />;
   if (!profile?.password_changed) return <Navigate to="/login" replace />;
   if (role !== "admin") return <Navigate to="/student" replace />;
+
+  const { toast } = useToast();
+
+  // Realtime quiz completion notifications
+  useEffect(() => {
+    if (role !== "admin") return;
+    const channel = supabase
+      .channel('quiz-completions')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'quiz_respuestas' },
+        async (payload) => {
+          const resp = payload.new as any;
+          // Get student name
+          const { data: student } = await supabase.from("profiles").select("nombre, apellidos").eq("id", resp.user_id).single();
+          const name = student ? `${student.nombre} ${student.apellidos}` : "Un estudiante";
+          toast({
+            title: "📝 Respuesta de Quiz",
+            description: `${name} respondió ${resp.correcta ? "✅ correctamente" : "❌ incorrectamente"}`,
+          });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [role, toast]);
 
   return (
     <SidebarProvider>
