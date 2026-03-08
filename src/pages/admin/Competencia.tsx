@@ -370,9 +370,9 @@ export default function AdminCompetencia() {
                         const isCorrect = i === currentQ.respuesta_correcta;
                         const showCorrect = comp.estado === "resultados";
                         return (
-                          <div key={i} className={`p-3 rounded-lg border-2 transition-all ${showCorrect ? (isCorrect ? "border-green-500 bg-green-500/10" : "border-border opacity-60") : "border-border"}`}>
+                          <div key={i} className={`p-3 rounded-lg border-2 transition-all ${showCorrect ? (isCorrect ? "border-accent bg-accent/10" : "border-border opacity-60") : "border-border"}`}>
                             <span className="font-bold mr-2">{String.fromCharCode(65 + i)})</span> {op}
-                            {showCorrect && isCorrect && <CheckCircle className="inline ml-2 h-4 w-4 text-green-500" />}
+                            {showCorrect && isCorrect && <CheckCircle className="inline ml-2 h-4 w-4 text-accent" />}
                           </div>
                         );
                       })}
@@ -437,7 +437,7 @@ export default function AdminCompetencia() {
                         const p = leaderboard[pos];
                         if (!p) return null;
                         const heights = ["h-32", "h-24", "h-20"];
-                        const colors = ["bg-yellow-500", "bg-gray-400", "bg-amber-700"];
+                        const colors = ["bg-neon-orange", "bg-muted-foreground", "bg-progress"];
                         const medals = ["🥇", "🥈", "🥉"];
                         const actualPos = pos === 1 ? 0 : pos === 0 ? 1 : 2;
                         return (
