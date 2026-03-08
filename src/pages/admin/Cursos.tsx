@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, ChevronDown, ChevronUp, Lock, Unlock, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, ChevronDown, ChevronUp, Lock, Unlock, Pencil, Trash2, Copy } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function AdminCursos() {
@@ -145,6 +145,77 @@ export default function AdminCursos() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-cursos"] }),
   });
 
+  const duplicateCursoMutation = useMutation({
+    mutationFn: async (cursoId: string) => {
+      const curso = cursos?.find(c => c.id === cursoId);
+      if (!curso) throw new Error("Curso no encontrado");
+      // Create new curso
+      const { data: newCurso, error: ce } = await supabase.from("cursos").insert({
+        titulo: `${curso.titulo} (Copia)`,
+        descripcion: curso.descripcion,
+        color: curso.color,
+        orden: (cursos?.length || 0) + 1,
+        activo: false,
+      }).select().single();
+      if (ce) throw ce;
+      // Copy sesiones
+      const sesiones = ((curso.sesiones as any[]) || []).sort((a: any, b: any) => a.orden - b.orden);
+      for (const s of sesiones) {
+        const { data: newSes, error: se } = await supabase.from("sesiones").insert({
+          curso_id: newCurso.id,
+          titulo: s.titulo,
+          orden: s.orden,
+          estado: "bloqueada",
+          descripcion: s.descripcion,
+        }).select().single();
+        if (se) throw se;
+        // Copy pestanas & contenido
+        const { data: tabs } = await supabase.from("pestanas").select("*").eq("sesion_id", s.id).order("orden");
+        for (const t of (tabs || [])) {
+          const { data: newTab } = await supabase.from("pestanas").insert({
+            sesion_id: newSes.id,
+            nombre: t.nombre,
+            orden: t.orden,
+            activa: t.activa,
+          }).select().single();
+          if (newTab) {
+            const { data: contenidos } = await supabase.from("contenido").select("*").eq("pestana_id", t.id).order("orden");
+            for (const c of (contenidos || [])) {
+              await supabase.from("contenido").insert({
+                pestana_id: newTab.id,
+                titulo: c.titulo,
+                texto: c.texto,
+                imagen_url: c.imagen_url,
+                video_url: c.video_url,
+                solucion: c.solucion,
+                grupo: c.grupo,
+                orden: c.orden,
+              });
+            }
+          }
+        }
+        // Copy quiz questions
+        const { data: preguntas } = await supabase.from("quiz_preguntas").select("*").eq("sesion_id", s.id);
+        for (const p of (preguntas || [])) {
+          await supabase.from("quiz_preguntas").insert({
+            sesion_id: newSes.id,
+            pregunta: p.pregunta,
+            opciones: p.opciones,
+            respuesta_correcta: p.respuesta_correcta,
+            explicacion: p.explicacion,
+            imagen_url: p.imagen_url,
+            tiempo_limite: p.tiempo_limite,
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      toast({ title: "Curso duplicado", description: "Se creó una copia sin inscripciones" });
+      qc.invalidateQueries({ queryKey: ["admin-cursos"] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
@@ -206,6 +277,9 @@ export default function AdminCursos() {
                       {curso.titulo}
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditCursoId(curso.id); setEditCursoForm({ titulo: curso.titulo, descripcion: curso.descripcion || "" }); }}>
                         <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" title="Duplicar curso" onClick={() => { if (confirm("¿Duplicar este curso con todo su contenido (sin inscripciones)?")) duplicateCursoMutation.mutate(curso.id); }}>
+                        <Copy className="h-3 w-3" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => { if (confirm("¿Eliminar este curso y todas sus sesiones?")) deleteCursoMutation.mutate(curso.id); }}>
                         <Trash2 className="h-3 w-3" />
