@@ -107,10 +107,10 @@ export default function AdminBiblioteca() {
               <div><Label>URL</Label><Input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} required /></div>
               <div>
                 <Label>Curso (opcional)</Label>
-                <Select value={form.curso_id} onValueChange={v => setForm({ ...form, curso_id: v })}>
+                <Select value={form.curso_id || "none"} onValueChange={v => setForm({ ...form, curso_id: v === "none" ? "" : v })}>
                   <SelectTrigger><SelectValue placeholder="Sin curso" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin curso</SelectItem>
+                    <SelectItem value="none">Sin curso</SelectItem>
                     {cursos?.map(c => <SelectItem key={c.id} value={c.id}>{c.titulo}</SelectItem>)}
                   </SelectContent>
                 </Select>
