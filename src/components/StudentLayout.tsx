@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import logoMedd from "@/assets/logo-medd.png";
 
 const studentLinks = [
   { title: "Inicio", url: "/student", icon: LayoutDashboard },
@@ -43,9 +44,9 @@ export default function StudentLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Top bar desktop */}
       <header className="hidden md:flex h-14 items-center border-b border-border px-6 bg-card justify-between">
         <div className="flex items-center gap-4">
+          <img src={logoMedd} alt="MEDD" className="w-8 h-8 rounded-full object-cover" />
           <h1 className="font-display font-bold text-primary text-lg">MEDD</h1>
           <nav className="flex gap-1">
             {studentLinks.map(item => (
@@ -69,12 +70,10 @@ export default function StudentLayout() {
         </div>
       </header>
 
-      {/* Content */}
       <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-auto">
         <Outlet />
       </main>
 
-      {/* Bottom bar mobile */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around py-2 z-50">
         {studentLinks.map(item => {
           const isActive = item.url === "/student" ? location.pathname === "/student" : location.pathname.startsWith(item.url);

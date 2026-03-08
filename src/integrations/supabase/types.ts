@@ -57,6 +57,7 @@ export type Database = {
       }
       contenido: {
         Row: {
+          grupo: string | null
           id: string
           imagen_url: string | null
           orden: number | null
@@ -67,6 +68,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          grupo?: string | null
           id?: string
           imagen_url?: string | null
           orden?: number | null
@@ -77,6 +79,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          grupo?: string | null
           id?: string
           imagen_url?: string | null
           orden?: number | null
@@ -161,6 +164,8 @@ export type Database = {
       }
       mensajes: {
         Row: {
+          archivo_nombre: string | null
+          archivo_url: string | null
           contenido: string
           created_at: string | null
           destinatario_id: string
@@ -169,6 +174,8 @@ export type Database = {
           remitente_id: string
         }
         Insert: {
+          archivo_nombre?: string | null
+          archivo_url?: string | null
           contenido: string
           created_at?: string | null
           destinatario_id: string
@@ -177,6 +184,8 @@ export type Database = {
           remitente_id: string
         }
         Update: {
+          archivo_nombre?: string | null
+          archivo_url?: string | null
           contenido?: string
           created_at?: string | null
           destinatario_id?: string

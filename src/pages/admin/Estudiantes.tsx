@@ -17,13 +17,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 function calcAge(dob: string | null) {
   if (!dob) return "—";
-  const b = new Date(dob), now = new Date();
-  const y = now.getFullYear() - b.getFullYear();
-  const m = now.getMonth() - b.getMonth();
-  const d = now.getDate() - b.getDate();
-  const adjM = d < 0 ? m - 1 : m;
-  const adjY = adjM < 0 ? y - 1 : y;
-  return `${adjY}a`;
+  const b = new Date(dob);
+  const now = new Date();
+  
+  let years = now.getFullYear() - b.getFullYear();
+  let months = now.getMonth() - b.getMonth();
+  let days = now.getDate() - b.getDate();
+  
+  if (days < 0) {
+    months--;
+    const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  
+  return `${years}a ${months}m ${days}d`;
 }
 
 export default function AdminEstudiantes() {
@@ -192,7 +203,7 @@ export default function AdminEstudiantes() {
                       <TableRow key={s.id}>
                         <TableCell className="font-mono text-sm">{s.cedula}</TableCell>
                         <TableCell>{s.nombre} {s.apellidos}</TableCell>
-                        <TableCell>{calcAge(s.fecha_nacimiento)}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">{calcAge(s.fecha_nacimiento)}</TableCell>
                         <TableCell>
                           {role?.id ? (
                             <Select defaultValue={role.rol} onValueChange={v => updateRoleMutation.mutate({ roleId: role.id, rol: v })}>
