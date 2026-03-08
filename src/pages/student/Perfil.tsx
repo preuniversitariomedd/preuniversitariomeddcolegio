@@ -20,12 +20,25 @@ const checks = [
 
 export default function StudentPerfil() {
   const { user, profile, changePassword, refreshProfile } = useAuth();
+  const viewAsId = useViewAsStudent();
+  const isViewingOther = !!viewAsId;
   const { toast } = useToast();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const { data: viewProfile } = useQuery({
+    queryKey: ["view-profile", viewAsId],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("*").eq("id", viewAsId!).single();
+      return data;
+    },
+    enabled: !!viewAsId,
+  });
+
+  const displayProfile = isViewingOther ? viewProfile : profile;
 
   const allPassed = checks.every(c => c.test(password)) && password === confirm && confirm.length > 0;
 
@@ -67,7 +80,7 @@ export default function StudentPerfil() {
     toast({ title: "Foto actualizada" });
   };
 
-  const avatarSrc = profile?.avatar_url;
+  const avatarSrc = displayProfile?.avatar_url;
 
   return (
     <div className="space-y-6 max-w-2xl">
