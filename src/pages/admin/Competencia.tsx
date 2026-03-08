@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { playPodium, playJoin } from "@/lib/sounds";
 
 type Competencia = {
   id: string; titulo: string; codigo: string; estado: string;
@@ -274,7 +275,7 @@ export default function AdminCompetencia() {
     }
   };
   const showResults = () => updateEstado("resultados");
-  const endGame = () => { updateEstado("finalizada"); confetti({ particleCount: 200, spread: 100 }); };
+  const endGame = () => { updateEstado("finalizada"); confetti({ particleCount: 200, spread: 100 }); playPodium(); };
 
   const currentQ = comp && preguntas[comp.pregunta_actual - 1];
   const currentResponses = currentQ ? respuestas.filter(r => r.pregunta_id === currentQ.id) : [];
