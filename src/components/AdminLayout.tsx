@@ -49,7 +49,8 @@ function AdminSidebar() {
           {!collapsed && (
             <div>
               <h2 className="font-display font-bold text-primary text-lg leading-tight">MEDD</h2>
-              <p className="text-xs text-muted-foreground truncate">{profile?.nombre} {profile?.apellidos}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Metodología Educativa Didáctica a Distancia</p>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{profile?.nombre} {profile?.apellidos}</p>
             </div>
           )}
         </div>
