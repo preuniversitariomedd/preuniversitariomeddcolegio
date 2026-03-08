@@ -402,7 +402,7 @@ export default function AdminCompetencia() {
                       <Button variant="outline" size="sm" onClick={() => sendPowerUp("50_50")} className="gap-1"><Divide className="h-4 w-4 text-orange-400" /> 50/50</Button>
                     </TooltipTrigger><TooltipContent>Elimina 2 opciones incorrectas para todos</TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => sendPowerUp("x2")} className="gap-1"><X2 className="h-4 w-4 text-green-400" /> x2 Puntos</Button>
+                      <Button variant="outline" size="sm" onClick={() => sendPowerUp("x2")} className="gap-1"><Zap className="h-4 w-4 text-green-400" /> x2 Puntos</Button>
                     </TooltipTrigger><TooltipContent>Duplica puntos para la siguiente correcta (todos)</TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild>
                       <Button variant="outline" size="sm" onClick={() => sendPowerUp("x5_penalty")} className="gap-1 text-destructive"><XCircle className="h-4 w-4" /> x5 Penalización</Button>
