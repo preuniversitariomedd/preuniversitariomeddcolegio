@@ -370,6 +370,28 @@ export default function AdminQuiz() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            <Dialog open={openAI} onOpenChange={v => { setOpenAI(v); if (!v) { setAiTema(""); setAiContexto(""); } }}>
+              <DialogTrigger asChild><Button variant="neon" size="sm" className="bg-gradient-to-r from-primary to-accent"><Sparkles className="h-4 w-4 mr-1" />Generar con IA</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Generar preguntas con IA</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div><Label>Tema *</Label><Input value={aiTema} onChange={e => setAiTema(e.target.value)} placeholder="Ej: Tabla periódica, enlaces químicos" /></div>
+                  <div><Label>Contexto adicional (opcional)</Label><Textarea rows={3} value={aiContexto} onChange={e => setAiContexto(e.target.value)} placeholder="Nivel de dificultad, subtemas específicos..." /></div>
+                  <div><Label>Cantidad de preguntas</Label>
+                    <Select value={aiCantidad} onValueChange={setAiCantidad}>
+                      <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[3, 5, 7, 10].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="neon" className="w-full" onClick={() => aiMutation.mutate()} disabled={aiMutation.isPending || !aiTema.trim()}>
+                    {aiMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-1" />Generando...</> : <><Sparkles className="h-4 w-4 mr-1" />Generar</>}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
       </div>
