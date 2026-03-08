@@ -322,7 +322,7 @@ export default function AdminEstudiantes() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <Input placeholder="Buscar por nombre o cédula..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
         <Select value={colegioFilter} onValueChange={setColegioFilter}>
           <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filtrar por colegio" /></SelectTrigger>
@@ -331,6 +331,21 @@ export default function AdminEstudiantes() {
             {colegios.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button variant="outline" size="sm" onClick={() => {
+          if (!filtered?.length) return;
+          downloadCSV(filtered.map(s => ({
+            Cédula: s.cedula,
+            Nombre: s.nombre,
+            Apellidos: s.apellidos,
+            Colegio: (s as any).colegio || "",
+            Edad: calcAge(s.fecha_nacimiento),
+            Inscripción: s.created_at ? new Date(s.created_at).toLocaleDateString("es-EC") : "",
+            Rol: ((s.user_roles as any)?.[0] || (s.user_roles as any))?.rol || "Sin rol",
+            Estado: ((s.user_roles as any)?.[0] || (s.user_roles as any))?.activo ? "Activo" : "Inactivo",
+          })), "estudiantes");
+        }}>
+          <Download className="h-4 w-4 mr-1" />Exportar CSV
+        </Button>
       </div>
 
       {isLoading ? (
