@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Lock, CheckCircle, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -32,7 +32,39 @@ export default function StudentCursos() {
     enabled: !!profile,
   });
 
+  // Check quiz scores per session to determine if student can unlock
+  const { data: quizScores } = useQuery({
+    queryKey: ["student-quiz-scores"],
+    queryFn: async () => {
+      // Get all quiz questions grouped by session
+      const { data: respuestas } = await supabase
+        .from("quiz_respuestas")
+        .select("pregunta_id, correcta, quiz_preguntas(sesion_id)")
+        .eq("user_id", profile!.id);
+      
+      // Calculate score per session
+      const sessionScores: Record<string, { correct: number; total: number }> = {};
+      respuestas?.forEach(r => {
+        const sid = (r.quiz_preguntas as any)?.sesion_id;
+        if (!sid) return;
+        if (!sessionScores[sid]) sessionScores[sid] = { correct: 0, total: 0 };
+        sessionScores[sid].total++;
+        if (r.correcta) sessionScores[sid].correct++;
+      });
+      return sessionScores;
+    },
+    enabled: !!profile,
+  });
+
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  const canAccess = (s: any) => {
+    if (s.estado === "abierta") return true;
+    // Check if student scored >= 80% on quiz for this session
+    const score = quizScores?.[s.id];
+    if (score && score.total > 0 && (score.correct / score.total) >= 0.8) return true;
+    return false;
+  };
 
   return (
     <div className="space-y-6">
@@ -46,23 +78,29 @@ export default function StudentCursos() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {(curso.sesiones as any[])?.sort((a: any, b: any) => a.orden - b.orden).map((s: any) => {
               const p = progreso?.[s.id] || 0;
-              const blocked = s.estado === "bloqueada";
-              return blocked ? (
-                <Card key={s.id} className="opacity-50 cursor-not-allowed">
-                  <CardContent className="py-4 flex items-center gap-3">
-                    <Lock className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm">{s.orden}. {s.titulo}</span>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Link key={s.id} to={`/student/sesion/${s.id}`}>
-                  <Card className={`cursor-pointer hover:border-primary/50 transition-colors ${p >= 100 ? "border-success/50" : p > 0 ? "border-progress/50" : ""}`}>
-                    <CardContent className="py-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {p >= 100 ? <CheckCircle className="h-5 w-5 text-success" /> : p > 0 ? <Clock className="h-5 w-5 text-progress" /> : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />}
-                        <span className="text-sm font-medium">{s.orden}. {s.titulo}</span>
+              const accessible = canAccess(s);
+              const score = quizScores?.[s.id];
+              const blocked = !accessible;
+
+              return (
+                <Link key={s.id} to={accessible ? `/student/sesion/${s.id}` : "#"} onClick={e => { if (blocked) e.preventDefault(); }}>
+                  <Card className={`transition-colors ${blocked ? "opacity-60" : "cursor-pointer hover:border-primary/50"} ${p >= 100 ? "border-success/50" : p > 0 ? "border-progress/50" : ""}`}>
+                    <CardContent className="py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {blocked ? <Lock className="h-5 w-5 text-muted-foreground" /> : p >= 100 ? <CheckCircle className="h-5 w-5 text-success" /> : p > 0 ? <Clock className="h-5 w-5 text-progress" /> : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />}
+                          <span className="text-sm font-medium">{s.orden}. {s.titulo}</span>
+                        </div>
+                        {p > 0 && <Badge variant="secondary">{p}%</Badge>}
                       </div>
-                      {p > 0 && <Badge variant="secondary">{p}%</Badge>}
+                      {blocked && score && score.total > 0 && (
+                        <p className="text-xs text-muted-foreground mt-2 ml-8">
+                          Quiz: {Math.round((score.correct / score.total) * 100)}% (necesitas 80%)
+                        </p>
+                      )}
+                      {blocked && (!score || score.total === 0) && (
+                        <p className="text-xs text-muted-foreground mt-2 ml-8">🔒 Completa el quiz con 80% para desbloquear</p>
+                      )}
                     </CardContent>
                   </Card>
                 </Link>

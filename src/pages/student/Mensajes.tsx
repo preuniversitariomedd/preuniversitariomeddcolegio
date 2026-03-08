@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { Send, Paperclip, FileText, X } from "lucide-react";
 
 export default function StudentMensajes() {
@@ -13,6 +14,7 @@ export default function StudentMensajes() {
   const qc = useQueryClient();
   const [newMsg, setNewMsg] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [attachedFile, setAttachedFile] = useState<{ url: string; name: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +34,7 @@ export default function StudentMensajes() {
         .select("*")
         .or(`remitente_id.eq.${user!.id},destinatario_id.eq.${user!.id}`)
         .order("created_at", { ascending: true })
-        .limit(100);
+        .limit(200);
       if (data) {
         const unread = data.filter(m => m.destinatario_id === user!.id && !m.leido);
         if (unread.length > 0) {
@@ -48,13 +50,17 @@ export default function StudentMensajes() {
 
   const handleFileUpload = async (file: File) => {
     setUploading(true);
+    setUploadProgress(0);
     const ext = file.name.split(".").pop();
     const path = `mensajes/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const interval = setInterval(() => setUploadProgress(p => Math.min(p + 15, 90)), 200);
     const { error } = await supabase.storage.from("contenido").upload(path, file);
-    if (error) { setUploading(false); return; }
+    clearInterval(interval);
+    if (error) { setUploading(false); setUploadProgress(0); return; }
     const { data: urlData } = supabase.storage.from("contenido").getPublicUrl(path);
     setAttachedFile({ url: urlData.publicUrl, name: file.name });
-    setUploading(false);
+    setUploadProgress(100);
+    setTimeout(() => { setUploading(false); setUploadProgress(0); }, 500);
   };
 
   const sendMutation = useMutation({
@@ -89,13 +95,13 @@ export default function StudentMensajes() {
                 <div key={m.id} className={`flex ${m.remitente_id === user?.id ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.remitente_id === user?.id ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                     <p>{m.contenido}</p>
-                    {(m as any).archivo_url && (
+                    {m.archivo_url && (
                       <div className="mt-2">
-                        {isImage((m as any).archivo_nombre || "") ? (
-                          <img src={(m as any).archivo_url} alt="" className="max-w-full rounded max-h-48" />
+                        {isImage(m.archivo_nombre || "") ? (
+                          <img src={m.archivo_url} alt="" className="max-w-full rounded max-h-48" />
                         ) : (
-                          <a href={(m as any).archivo_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline text-xs">
-                            <FileText className="h-3 w-3" />{(m as any).archivo_nombre}
+                          <a href={m.archivo_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline text-xs">
+                            <FileText className="h-3 w-3" />{m.archivo_nombre}
                           </a>
                         )}
                       </div>
@@ -108,6 +114,7 @@ export default function StudentMensajes() {
           </ScrollArea>
         </CardContent>
         <div className="p-4 border-t border-border space-y-2">
+          {uploading && <Progress value={uploadProgress} className="h-2" />}
           {attachedFile && (
             <div className="flex items-center gap-2 text-xs bg-muted p-2 rounded">
               <Paperclip className="h-3 w-3" />
