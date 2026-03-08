@@ -284,9 +284,13 @@ export default function AdminEstudiantes() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const filtered = students?.filter(s =>
-    !search || s.nombre.toLowerCase().includes(search.toLowerCase()) || s.cedula.includes(search) || s.apellidos.toLowerCase().includes(search.toLowerCase())
-  );
+  const colegios = [...new Set(students?.map(s => (s as any).colegio).filter(Boolean) || [])].sort();
+
+  const filtered = students?.filter(s => {
+    const matchSearch = !search || s.nombre.toLowerCase().includes(search.toLowerCase()) || s.cedula.includes(search) || s.apellidos.toLowerCase().includes(search.toLowerCase());
+    const matchColegio = colegioFilter === "all" || (s as any).colegio === colegioFilter;
+    return matchSearch && matchColegio;
+  });
 
   const getUserCourses = (userId: string) => inscripciones?.filter(i => i.user_id === userId).map(i => i.curso_id) || [];
 
