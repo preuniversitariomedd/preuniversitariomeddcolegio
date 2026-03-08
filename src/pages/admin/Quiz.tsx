@@ -399,16 +399,45 @@ export default function AdminQuiz() {
       </div>
 
       {sesionId && (() => {
-        const filteredPreguntas = preguntas?.filter(p =>
-          !searchFilter || p.pregunta.toLowerCase().includes(searchFilter.toLowerCase())
-        );
+        const filteredPreguntas = preguntas?.filter(p => {
+          const matchText = !searchFilter || p.pregunta.toLowerCase().includes(searchFilter.toLowerCase());
+          const matchTiempo = tiempoFilter === "all" || String(p.tiempo_limite) === tiempoFilter;
+          return matchText && matchTiempo;
+        });
+        const tiempoOptions = [...new Set(preguntas?.map(p => p.tiempo_limite).filter(Boolean))].sort((a, b) => (a ?? 0) - (b ?? 0));
         return (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle className="text-lg">{filteredPreguntas?.length || 0} de {preguntas?.length || 0} preguntas</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Filtrar preguntas..." value={searchFilter} onChange={e => setSearchFilter(e.target.value)} className="pl-8 h-9" />
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-48">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Filtrar preguntas..." value={searchFilter} onChange={e => setSearchFilter(e.target.value)} className="pl-8 h-9" />
+              </div>
+              <Select value={tiempoFilter} onValueChange={setTiempoFilter}>
+                <SelectTrigger className="w-36 h-9"><SelectValue placeholder="Tiempo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todo tiempo</SelectItem>
+                  {tiempoOptions.map(t => <SelectItem key={t} value={String(t)}>{t}s</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={() => {
+                if (!filteredPreguntas?.length) return;
+                downloadCSV(filteredPreguntas.map((p, i) => {
+                  const opcs = (p.opciones as string[]) || [];
+                  return {
+                    "#": i + 1,
+                    Pregunta: p.pregunta,
+                    "Opción A": opcs[0] || "",
+                    "Opción B": opcs[1] || "",
+                    "Opción C": opcs[2] || "",
+                    "Opción D": opcs[3] || "",
+                    Correcta: letters[p.respuesta_correcta] || "?",
+                    Tiempo: `${p.tiempo_limite}s`,
+                    Explicación: p.explicacion || "",
+                  };
+                }), "quiz-preguntas");
+              }}><Download className="h-4 w-4 mr-1" />CSV</Button>
             </div>
           </CardHeader>
           <CardContent className="p-0">
