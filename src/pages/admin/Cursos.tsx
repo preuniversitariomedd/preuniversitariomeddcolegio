@@ -4,12 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, ChevronDown, ChevronUp, Lock, Unlock, Pencil } from "lucide-react";
+import { Loader2, Plus, ChevronDown, ChevronUp, Lock, Unlock, Pencil, Trash2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function AdminCursos() {
@@ -17,11 +18,13 @@ export default function AdminCursos() {
   const qc = useQueryClient();
   const [openCurso, setOpenCurso] = useState(false);
   const [cursoForm, setCursoForm] = useState({ titulo: "", descripcion: "", color: "#8B5CF6", orden: 1 });
-  const [sesionForm, setSesionForm] = useState({ titulo: "", curso_id: "", orden: 1 });
+  const [sesionForm, setSesionForm] = useState({ titulo: "", descripcion: "", curso_id: "", orden: 1 });
   const [openSesion, setOpenSesion] = useState(false);
   const [expandedCurso, setExpandedCurso] = useState<string | null>(null);
   const [editCursoId, setEditCursoId] = useState<string | null>(null);
-  const [editCursoName, setEditCursoName] = useState("");
+  const [editCursoForm, setEditCursoForm] = useState({ titulo: "", descripcion: "" });
+  const [editSesionId, setEditSesionId] = useState<string | null>(null);
+  const [editSesionForm, setEditSesionForm] = useState({ titulo: "", descripcion: "" });
 
   const { data: cursos, isLoading } = useQuery({
     queryKey: ["admin-cursos"],
@@ -48,7 +51,7 @@ export default function AdminCursos() {
   const updateCursoMutation = useMutation({
     mutationFn: async () => {
       if (!editCursoId) return;
-      const { error } = await supabase.from("cursos").update({ titulo: editCursoName }).eq("id", editCursoId);
+      const { error } = await supabase.from("cursos").update({ titulo: editCursoForm.titulo, descripcion: editCursoForm.descripcion }).eq("id", editCursoId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -58,9 +61,26 @@ export default function AdminCursos() {
     },
   });
 
+  const deleteCursoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // Delete sesiones first (cascade should handle but be safe)
+      const { error } = await supabase.from("cursos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Curso eliminado" });
+      qc.invalidateQueries({ queryKey: ["admin-cursos"] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const createSesionMutation = useMutation({
     mutationFn: async () => {
-      const { data: sesion, error } = await supabase.from("sesiones").insert(sesionForm).select().single();
+      const { data: sesion, error } = await supabase.from("sesiones").insert({
+        titulo: sesionForm.titulo,
+        curso_id: sesionForm.curso_id,
+        orden: sesionForm.orden,
+      }).select().single();
       if (error) throw error;
       const defaultTabs = ["Teoría", "Trucos", "Ejercicios", "Quiz"];
       for (let i = 0; i < defaultTabs.length; i++) {
@@ -70,6 +90,40 @@ export default function AdminCursos() {
     onSuccess: () => {
       toast({ title: "Sesión creada con pestañas por defecto" });
       setOpenSesion(false);
+      qc.invalidateQueries({ queryKey: ["admin-cursos"] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const updateSesionMutation = useMutation({
+    mutationFn: async () => {
+      if (!editSesionId) return;
+      const { error } = await supabase.from("sesiones").update({ titulo: editSesionForm.titulo }).eq("id", editSesionId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sesión actualizada" });
+      setEditSesionId(null);
+      qc.invalidateQueries({ queryKey: ["admin-cursos"] });
+    },
+  });
+
+  const deleteSesionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // Delete pestanas & contenido first
+      const { data: tabs } = await supabase.from("pestanas").select("id").eq("sesion_id", id);
+      if (tabs) {
+        for (const t of tabs) {
+          await supabase.from("contenido").delete().eq("pestana_id", t.id);
+        }
+        await supabase.from("pestanas").delete().eq("sesion_id", id);
+      }
+      await supabase.from("quiz_preguntas").delete().eq("sesion_id", id);
+      const { error } = await supabase.from("sesiones").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sesión eliminada" });
       qc.invalidateQueries({ queryKey: ["admin-cursos"] });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -103,7 +157,7 @@ export default function AdminCursos() {
             <DialogHeader><DialogTitle>Nuevo Curso</DialogTitle></DialogHeader>
             <form onSubmit={e => { e.preventDefault(); createCursoMutation.mutate(); }} className="space-y-4">
               <div><Label>Título</Label><Input value={cursoForm.titulo} onChange={e => setCursoForm({ ...cursoForm, titulo: e.target.value })} required /></div>
-              <div><Label>Descripción</Label><Input value={cursoForm.descripcion} onChange={e => setCursoForm({ ...cursoForm, descripcion: e.target.value })} /></div>
+              <div><Label>Descripción</Label><Textarea value={cursoForm.descripcion} onChange={e => setCursoForm({ ...cursoForm, descripcion: e.target.value })} /></div>
               <div className="flex gap-4">
                 <div><Label>Color</Label><Input type="color" value={cursoForm.color} onChange={e => setCursoForm({ ...cursoForm, color: e.target.value })} className="h-10 w-20" /></div>
                 <div><Label>Orden</Label><Input type="number" value={cursoForm.orden} onChange={e => setCursoForm({ ...cursoForm, orden: parseInt(e.target.value) })} min={1} /></div>
@@ -114,13 +168,25 @@ export default function AdminCursos() {
         </Dialog>
       </div>
 
-      {/* Edit curso name dialog */}
+      {/* Edit curso dialog */}
       <Dialog open={!!editCursoId} onOpenChange={v => { if (!v) setEditCursoId(null); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Editar nombre del curso</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Editar Curso</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Input value={editCursoName} onChange={e => setEditCursoName(e.target.value)} />
+            <div><Label>Título</Label><Input value={editCursoForm.titulo} onChange={e => setEditCursoForm({ ...editCursoForm, titulo: e.target.value })} /></div>
+            <div><Label>Descripción</Label><Textarea value={editCursoForm.descripcion} onChange={e => setEditCursoForm({ ...editCursoForm, descripcion: e.target.value })} /></div>
             <Button variant="neon" className="w-full" onClick={() => updateCursoMutation.mutate()}>Guardar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit sesion dialog */}
+      <Dialog open={!!editSesionId} onOpenChange={v => { if (!v) setEditSesionId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Sesión</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Título</Label><Input value={editSesionForm.titulo} onChange={e => setEditSesionForm({ ...editSesionForm, titulo: e.target.value })} /></div>
+            <Button variant="neon" className="w-full" onClick={() => updateSesionMutation.mutate()}>Guardar</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -137,11 +203,14 @@ export default function AdminCursos() {
                   <div>
                     <CardTitle className="text-lg flex items-center gap-2">
                       {curso.titulo}
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditCursoId(curso.id); setEditCursoName(curso.titulo); }}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditCursoId(curso.id); setEditCursoForm({ titulo: curso.titulo, descripcion: curso.descripcion || "" }); }}>
                         <Pencil className="h-3 w-3" />
                       </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => { if (confirm("¿Eliminar este curso y todas sus sesiones?")) deleteCursoMutation.mutate(curso.id); }}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">{(curso.sesiones as any[])?.length || 0} sesiones</p>
+                    <p className="text-sm text-muted-foreground">{(curso.sesiones as any[])?.length || 0} sesiones{curso.descripcion ? ` — ${curso.descripcion}` : ""}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -170,9 +239,17 @@ export default function AdminCursos() {
                         {s.estado === "abierta" ? <Unlock className="h-4 w-4 text-success" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
                         <span className="text-sm font-medium">{s.orden}. {s.titulo}</span>
                       </div>
-                      <Button size="sm" variant="ghost" onClick={() => toggleSesionMutation.mutate({ id: s.id, estado: s.estado === "abierta" ? "bloqueada" : "abierta" })}>
-                        {s.estado === "abierta" ? "Bloquear" : "Desbloquear"}
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => { setEditSesionId(s.id); setEditSesionForm({ titulo: s.titulo, descripcion: "" }); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => toggleSesionMutation.mutate({ id: s.id, estado: s.estado === "abierta" ? "bloqueada" : "abierta" })}>
+                          {s.estado === "abierta" ? "Bloquear" : "Desbloquear"}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`¿Eliminar sesión "${s.titulo}" y todo su contenido?`)) deleteSesionMutation.mutate(s.id); }}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </CardContent>

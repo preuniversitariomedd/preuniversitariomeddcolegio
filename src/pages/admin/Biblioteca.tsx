@@ -4,19 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, ExternalLink } from "lucide-react";
+import { Loader2, Plus, Trash2, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function AdminBiblioteca() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ titulo: "", descripcion: "", tipo: "pdf" as string, url: "", categoria: "", curso_id: "" });
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["admin-biblioteca"],
@@ -59,6 +60,22 @@ export default function AdminBiblioteca() {
   });
 
   const tipoBadgeColor: Record<string, string> = { pdf: "bg-destructive/20 text-destructive", video: "bg-secondary/20 text-secondary", link: "bg-primary/20 text-primary", imagen: "bg-success/20 text-success", documento: "bg-progress/20 text-progress" };
+
+  // Group by category
+  const grouped = (items || []).reduce<Record<string, typeof items>>((acc, item) => {
+    const cat = item.categoria || "Sin categoría";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat]!.push(item);
+    return acc;
+  }, {});
+
+  const toggleCat = (cat: string) => {
+    const next = new Set(expandedCats);
+    next.has(cat) ? next.delete(cat) : next.add(cat);
+    setExpandedCats(next);
+  };
+
+  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
@@ -104,39 +121,43 @@ export default function AdminBiblioteca() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Categoría</TableHead>
-                  <TableHead>Curso</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items?.map(item => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.titulo}</TableCell>
-                    <TableCell><Badge className={tipoBadgeColor[item.tipo] || ""}>{item.tipo}</Badge></TableCell>
-                    <TableCell>{item.categoria || "—"}</TableCell>
-                    <TableCell>{(item.cursos as any)?.titulo || "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" asChild><a href={item.url} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a></Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteMutation.mutate(item.id)}><Trash2 className="h-4 w-4" /></Button>
+      <div className="space-y-3">
+        {Object.entries(grouped).map(([cat, catItems]) => (
+          <Collapsible key={cat} open={expandedCats.has(cat)} onOpenChange={() => toggleCat(cat)}>
+            <Card>
+              <CollapsibleTrigger className="w-full">
+                <CardContent className="py-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    {expandedCats.has(cat) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    <span className="font-medium">{cat}</span>
+                    <Badge variant="secondary">{catItems!.length}</Badge>
+                  </div>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-6 pb-4 space-y-2">
+                  {catItems!.map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Badge className={tipoBadgeColor[item.tipo] || ""} variant="secondary">{item.tipo}</Badge>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{item.titulo}</p>
+                          {item.descripcion && <p className="text-xs text-muted-foreground truncate">{item.descripcion}</p>}
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                      <div className="flex gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild><a href={item.url} target="_blank" rel="noreferrer"><ExternalLink className="h-3 w-3" /></a></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(item.id)}><Trash2 className="h-3 w-3" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        ))}
+        {Object.keys(grouped).length === 0 && <p className="text-center text-muted-foreground py-8">No hay recursos en la biblioteca.</p>}
+      </div>
     </div>
   );
 }
