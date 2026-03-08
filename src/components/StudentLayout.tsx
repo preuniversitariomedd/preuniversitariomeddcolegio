@@ -107,9 +107,20 @@ export default function StudentLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {isAdminPreview && (
-        <div className="bg-accent text-accent-foreground text-center text-sm py-1.5 flex items-center justify-center gap-2 font-medium">
+        <div className="bg-accent text-accent-foreground text-sm py-1.5 flex items-center justify-center gap-2 font-medium flex-wrap px-4">
           <ShieldCheck className="h-4 w-4" />
           Vista previa como estudiante
+          <Select value={viewAsStudentId || "self"} onValueChange={(v) => setViewAsStudentId(v === "self" ? null : v)}>
+            <SelectTrigger className="h-7 w-auto min-w-[180px] text-xs bg-background border-border">
+              <SelectValue placeholder="Tú mismo (admin)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="self">Tú mismo (admin)</SelectItem>
+              {students?.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.apellidos}, {s.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <a href="/admin" className="underline ml-2 hover:text-primary">← Volver al panel</a>
         </div>
       )}
@@ -150,9 +161,11 @@ export default function StudentLayout() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-auto">
-        <Outlet />
-      </main>
+      <ViewAsStudentContext.Provider value={viewAsStudentId}>
+        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-auto">
+          <Outlet />
+        </main>
+      </ViewAsStudentContext.Provider>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around py-2 z-50">
         {studentLinks.map(item => {
