@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
-  LayoutDashboard, Users, BookOpen, FileText, HelpCircle, Library, MessageSquare, LogOut, Moon, Sun, Zap, User,
+  LayoutDashboard, Users, BookOpen, FileText, HelpCircle, Library, MessageSquare, LogOut, Moon, Sun, Zap, User, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -65,6 +65,12 @@ function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <div className="mt-auto p-3 space-y-2 border-t border-sidebar-border">
+          <Button variant="ghost" size="sm" className="w-full justify-start text-accent-foreground" asChild>
+            <a href="/student" target="_blank" rel="noopener noreferrer">
+              <Eye className="h-4 w-4 mr-2" />
+              {!collapsed && "Vista Estudiante"}
+            </a>
+          </Button>
           <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setDark(!dark)}>
             {dark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
             {!collapsed && (dark ? "Modo claro" : "Modo oscuro")}
