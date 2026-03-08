@@ -79,12 +79,6 @@ function AdminSidebar() {
 
 export default function AdminLayout() {
   const { user, role, loading, profile } = useAuth();
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (!user) return <Navigate to="/login" replace />;
-  if (!profile?.password_changed) return <Navigate to="/login" replace />;
-  if (role !== "admin") return <Navigate to="/student" replace />;
-
   const { toast } = useToast();
 
   // Realtime quiz completion notifications
@@ -97,7 +91,6 @@ export default function AdminLayout() {
         { event: 'INSERT', schema: 'public', table: 'quiz_respuestas' },
         async (payload) => {
           const resp = payload.new as any;
-          // Get student name
           const { data: student } = await supabase.from("profiles").select("nombre, apellidos").eq("id", resp.user_id).single();
           const name = student ? `${student.nombre} ${student.apellidos}` : "Un estudiante";
           toast({
@@ -109,6 +102,11 @@ export default function AdminLayout() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [role, toast]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!profile?.password_changed) return <Navigate to="/login" replace />;
+  if (role !== "admin") return <Navigate to="/student" replace />;
 
   return (
     <SidebarProvider>
