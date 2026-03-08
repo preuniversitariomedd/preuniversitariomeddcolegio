@@ -244,7 +244,7 @@ export default function AdminQuiz() {
               <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" />Manual</Button></DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Nueva Pregunta</DialogTitle></DialogHeader>
-                <form onSubmit={e => { e.preventDefault(); addMutation.mutate(); }} className="space-y-4">
+                <form onSubmit={e => { e.preventDefault(); addMutation.mutate(); }} className="space-y-4" onPaste={handleFormPaste}>
                   <div><Label>Pregunta (Markdown + LaTeX)</Label><Textarea rows={3} value={form.pregunta} onChange={e => setForm({ ...form, pregunta: e.target.value })} required /></div>
                   <div className="grid grid-cols-2 gap-4">
                     <div><Label>A)</Label><Input value={form.opcA} onChange={e => setForm({ ...form, opcA: e.target.value })} required /></div>
@@ -252,6 +252,13 @@ export default function AdminQuiz() {
                     <div><Label>C)</Label><Input value={form.opcC} onChange={e => setForm({ ...form, opcC: e.target.value })} required /></div>
                     <div><Label>D)</Label><Input value={form.opcD} onChange={e => setForm({ ...form, opcD: e.target.value })} required /></div>
                   </div>
+                  {form.imagen_url && (
+                    <div className="relative">
+                      <img src={form.imagen_url} alt="Preview" className="max-h-32 rounded border" />
+                      <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-6 w-6" onClick={() => setForm({ ...form, imagen_url: "" })}>✕</Button>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><ClipboardPaste className="h-3 w-3" /> Pega una imagen (Ctrl+V) para adjuntarla</p>
                   <div className="flex gap-4">
                     <div>
                       <Label>Correcta</Label>
