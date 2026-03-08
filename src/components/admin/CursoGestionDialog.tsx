@@ -52,7 +52,6 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
   const [selectedGrupo, setSelectedGrupo] = useState<string>("all");
   const [moveTarget, setMoveTarget] = useState<string>("");
 
-  // All students
   const { data: allStudents, isLoading: loadingStudents } = useQuery({
     queryKey: ["all-students"],
     queryFn: async () => {
@@ -65,7 +64,6 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
     },
   });
 
-  // Enrolled students
   const { data: enrolled } = useQuery({
     queryKey: ["inscripciones", cursoId],
     queryFn: async () => {
@@ -74,7 +72,6 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
     },
   });
 
-  // Groups
   const { data: grupos } = useQuery({
     queryKey: ["grupos"],
     queryFn: async () => {
@@ -83,7 +80,6 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
     },
   });
 
-  // Other courses for move
   const { data: otherCursos } = useQuery({
     queryKey: ["other-cursos", cursoId],
     queryFn: async () => {
@@ -94,9 +90,13 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
 
   const enrollMutation = useMutation({
     mutationFn: async (userIds: string[]) => {
-      const rows = userIds.map((user_id) => ({ user_id, curso_id: cursoId }));
-      const { error } = await supabase.from("inscripciones").upsert(rows, { onConflict: "user_id,curso_id", ignoreDuplicates: true });
-      if (error) throw error;
+      for (const user_id of userIds) {
+        const { error } = await supabase.from("inscripciones").upsert(
+          { user_id, curso_id: cursoId },
+          { onConflict: "user_id,curso_id", ignoreDuplicates: true }
+        );
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast({ title: "Estudiantes inscritos" });
@@ -121,12 +121,14 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
 
   const moveMutation = useMutation({
     mutationFn: async ({ userIds, targetCursoId }: { userIds: string[]; targetCursoId: string }) => {
-      // Remove from current
       await supabase.from("inscripciones").delete().eq("curso_id", cursoId).in("user_id", userIds);
-      // Add to target
-      const rows = userIds.map((user_id) => ({ user_id, curso_id: targetCursoId }));
-      const { error } = await supabase.from("inscripciones").upsert(rows, { onConflict: "user_id,curso_id", ignoreDuplicates: true });
-      if (error) throw error;
+      for (const user_id of userIds) {
+        const { error } = await supabase.from("inscripciones").upsert(
+          { user_id, curso_id: targetCursoId },
+          { onConflict: "user_id,curso_id", ignoreDuplicates: true }
+        );
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast({ title: "Estudiantes movidos" });
@@ -139,7 +141,6 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
 
   const enrolledSet = enrolled || new Set<string>();
 
-  // Filter by grupo membership
   const grupoMemberIds = selectedGrupo !== "all"
     ? new Set((grupos?.find((g: any) => g.id === selectedGrupo)?.grupo_miembros || []).map((m: any) => m.user_id))
     : null;
@@ -157,8 +158,6 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
   };
   const selectAll = () => setSelected(new Set(filtered.map((s: any) => s.id)));
   const clearAll = () => setSelected(new Set());
-  const selectEnrolled = () => setSelected(new Set(filtered.filter((s: any) => enrolledSet.has(s.id)).map((s: any) => s.id)));
-  const selectNotEnrolled = () => setSelected(new Set(filtered.filter((s: any) => !enrolledSet.has(s.id)).map((s: any) => s.id)));
 
   const selectGrupo = (grupoId: string) => {
     const members = (grupos?.find((g: any) => g.id === grupoId)?.grupo_miembros || []).map((m: any) => m.user_id);
@@ -169,7 +168,6 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
 
   return (
     <div className="space-y-4 mt-4">
-      {/* Filters */}
       <div className="flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -186,12 +184,11 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
         </Select>
       </div>
 
-      {/* Quick select */}
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={selectAll}>Marcar todos</Button>
         <Button size="sm" variant="outline" onClick={clearAll}>Limpiar</Button>
-        <Button size="sm" variant="outline" onClick={selectEnrolled}>Solo inscritos</Button>
-        <Button size="sm" variant="outline" onClick={selectNotEnrolled}>Solo no inscritos</Button>
+        <Button size="sm" variant="outline" onClick={() => setSelected(new Set(filtered.filter((s: any) => enrolledSet.has(s.id)).map((s: any) => s.id)))}>Solo inscritos</Button>
+        <Button size="sm" variant="outline" onClick={() => setSelected(new Set(filtered.filter((s: any) => !enrolledSet.has(s.id)).map((s: any) => s.id)))}>Solo no inscritos</Button>
         {(grupos || []).map((g: any) => (
           <Button key={g.id} size="sm" variant="secondary" onClick={() => selectGrupo(g.id)}>
             <Users className="h-3 w-3 mr-1" />{g.nombre}
@@ -199,7 +196,6 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
         ))}
       </div>
 
-      {/* Actions */}
       <div className="flex flex-wrap gap-2 items-center">
         <Badge variant="secondary">{selected.size} seleccionados</Badge>
         <Button size="sm" variant="neon" disabled={selected.size === 0 || enrollMutation.isPending} onClick={() => enrollMutation.mutate(Array.from(selected))}>
@@ -223,12 +219,16 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
         </div>
       </div>
 
-      {/* Table */}
       <div className="max-h-[40vh] overflow-y-auto border rounded-md">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10"><Checkbox checked={selected.size === filtered.length && filtered.length > 0} onCheckedChange={(v) => v ? selectAll() : clearAll()} /></TableHead>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={selected.size === filtered.length && filtered.length > 0}
+                  onCheckedChange={(v) => v ? selectAll() : clearAll()}
+                />
+              </TableHead>
               <TableHead>Nombre</TableHead>
               <TableHead>Cédula</TableHead>
               <TableHead>Estado</TableHead>
@@ -237,13 +237,25 @@ function TabEstudiantes({ cursoId }: { cursoId: string }) {
           <TableBody>
             {filtered.map((s: any) => (
               <TableRow key={s.id} className={enrolledSet.has(s.id) ? "bg-primary/5" : ""}>
-                <TableCell><Checkbox checked={selected.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} /></TableCell>
+                <TableCell>
+                  <Checkbox checked={selected.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} />
+                </TableCell>
                 <TableCell className="font-medium">{s.nombre} {s.apellidos}</TableCell>
                 <TableCell>{s.cedula}</TableCell>
-                <TableCell><Badge variant={enrolledSet.has(s.id) ? "default" : "secondary"}>{enrolledSet.has(s.id) ? "Inscrito" : "No inscrito"}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant={enrolledSet.has(s.id) ? "default" : "secondary"}>
+                    {enrolledSet.has(s.id) ? "Inscrito" : "No inscrito"}
+                  </Badge>
+                </TableCell>
               </TableRow>
-            )))}
-            {filtered.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No se encontraron estudiantes</TableCell></TableRow>}
+            ))}
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  No se encontraron estudiantes
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
@@ -283,12 +295,16 @@ function TabSesiones({ cursoId }: { cursoId: string }) {
     },
   });
 
-  const isUnlocked = (userId: string) => (userSesiones || []).some((su: any) => su.user_id === userId && su.desbloqueada);
+  const isUnlocked = (userId: string) =>
+    (userSesiones || []).some((su: any) => su.user_id === userId && su.desbloqueada);
 
   const toggleMutation = useMutation({
     mutationFn: async ({ userId, unlock }: { userId: string; unlock: boolean }) => {
       if (unlock) {
-        await supabase.from("sesiones_usuarios").upsert({ sesion_id: selectedSesion, user_id: userId, desbloqueada: true }, { onConflict: "sesion_id,user_id" });
+        await supabase.from("sesiones_usuarios").upsert(
+          { sesion_id: selectedSesion, user_id: userId, desbloqueada: true },
+          { onConflict: "sesion_id,user_id" }
+        );
       } else {
         await supabase.from("sesiones_usuarios").delete().eq("sesion_id", selectedSesion).eq("user_id", userId);
       }
@@ -302,8 +318,12 @@ function TabSesiones({ cursoId }: { cursoId: string }) {
   const batchMutation = useMutation({
     mutationFn: async ({ userIds, unlock }: { userIds: string[]; unlock: boolean }) => {
       if (unlock) {
-        const rows = userIds.map((user_id) => ({ sesion_id: selectedSesion, user_id, desbloqueada: true }));
-        await supabase.from("sesiones_usuarios").upsert(rows, { onConflict: "sesion_id,user_id" });
+        for (const user_id of userIds) {
+          await supabase.from("sesiones_usuarios").upsert(
+            { sesion_id: selectedSesion, user_id, desbloqueada: true },
+            { onConflict: "sesion_id,user_id" }
+          );
+        }
       } else {
         await supabase.from("sesiones_usuarios").delete().eq("sesion_id", selectedSesion).in("user_id", userIds);
       }
@@ -336,8 +356,12 @@ function TabSesiones({ cursoId }: { cursoId: string }) {
         <>
           <div className="flex flex-wrap gap-2 items-center">
             <Badge variant="secondary">{selectedUsers.size} seleccionados</Badge>
-            <Button size="sm" variant="outline" onClick={() => setSelectedUsers(new Set((enrolled || []).map((e: any) => e.id)))}>Marcar todos</Button>
-            <Button size="sm" variant="outline" onClick={() => setSelectedUsers(new Set())}>Limpiar</Button>
+            <Button size="sm" variant="outline" onClick={() => setSelectedUsers(new Set((enrolled || []).map((e: any) => e.id)))}>
+              Marcar todos
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSelectedUsers(new Set())}>
+              Limpiar
+            </Button>
             <Button size="sm" variant="neon" disabled={selectedUsers.size === 0} onClick={() => batchMutation.mutate({ userIds: Array.from(selectedUsers), unlock: true })}>
               <Unlock className="h-3 w-3 mr-1" />Desbloquear
             </Button>
@@ -350,7 +374,12 @@ function TabSesiones({ cursoId }: { cursoId: string }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10"><Checkbox checked={selectedUsers.size === (enrolled || []).length && (enrolled || []).length > 0} onCheckedChange={(v) => v ? setSelectedUsers(new Set((enrolled || []).map((e: any) => e.id))) : setSelectedUsers(new Set())} /></TableHead>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={selectedUsers.size === (enrolled || []).length && (enrolled || []).length > 0}
+                      onCheckedChange={(v) => v ? setSelectedUsers(new Set((enrolled || []).map((e: any) => e.id))) : setSelectedUsers(new Set())}
+                    />
+                  </TableHead>
                   <TableHead>Estudiante</TableHead>
                   <TableHead>Acceso</TableHead>
                   <TableHead className="w-20">Acción</TableHead>
@@ -359,19 +388,31 @@ function TabSesiones({ cursoId }: { cursoId: string }) {
               <TableBody>
                 {(enrolled || []).map((s: any) => (
                   <TableRow key={s.id}>
-                    <TableCell><Checkbox checked={selectedUsers.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} /></TableCell>
+                    <TableCell>
+                      <Checkbox checked={selectedUsers.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} />
+                    </TableCell>
                     <TableCell className="font-medium">{s.nombre} {s.apellidos}</TableCell>
                     <TableCell>
                       <Badge variant={isUnlocked(s.id) ? "default" : "secondary"}>
-                        {isUnlocked(s.id) ? <><Unlock className="h-3 w-3 mr-1" />Desbloqueada</> : <><Lock className="h-3 w-3 mr-1" />Bloqueada</>}
+                        {isUnlocked(s.id) ? (
+                          <><Unlock className="h-3 w-3 mr-1" />Desbloqueada</>
+                        ) : (
+                          <><Lock className="h-3 w-3 mr-1" />Bloqueada</>
+                        )}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Switch checked={isUnlocked(s.id)} onCheckedChange={(v) => toggleMutation.mutate({ userId: s.id, unlock: v })} />
                     </TableCell>
                   </TableRow>
-                )))}
-                {(enrolled || []).length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No hay estudiantes inscritos</TableCell></TableRow>}
+                ))}
+                {(enrolled || []).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      No hay estudiantes inscritos
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
@@ -386,11 +427,8 @@ function TabProgreso({ cursoId }: { cursoId: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ["curso-progreso", cursoId],
     queryFn: async () => {
-      // Get sessions for this course
       const { data: sesiones } = await supabase.from("sesiones").select("id, titulo, orden").eq("curso_id", cursoId).order("orden");
-      // Get enrolled users
       const { data: inscritos } = await supabase.from("inscripciones").select("user_id, profiles!inner(id, nombre, apellidos)").eq("curso_id", cursoId);
-      // Get progress
       const sesionIds = (sesiones || []).map((s) => s.id);
       let progreso: any[] = [];
       if (sesionIds.length > 0) {
@@ -403,16 +441,21 @@ function TabProgreso({ cursoId }: { cursoId: string }) {
         estudiantes: (inscritos || []).map((i: any) => {
           const userProgreso = progreso.filter((p) => p.user_id === i.user_id);
           const completadas = userProgreso.filter((p) => (p.porcentaje || 0) >= 80).length;
-          const avgPorcentaje = userProgreso.length > 0 ? Math.round(userProgreso.reduce((sum, p) => sum + (p.porcentaje || 0), 0) / (sesiones || []).length) : 0;
-          const currentSesion = userProgreso.length > 0 ? Math.max(...userProgreso.map((p) => {
-            const s = (sesiones || []).find((se) => se.id === p.sesion_id);
-            return s ? s.orden : 0;
-          })) : 0;
+          const totalSesiones = (sesiones || []).length;
+          const avgPorcentaje = totalSesiones > 0 && userProgreso.length > 0
+            ? Math.round(userProgreso.reduce((sum, p) => sum + (p.porcentaje || 0), 0) / totalSesiones)
+            : 0;
+          const currentSesion = userProgreso.length > 0
+            ? Math.max(...userProgreso.map((p) => {
+                const s = (sesiones || []).find((se) => se.id === p.sesion_id);
+                return s ? s.orden : 0;
+              }))
+            : 0;
           return {
             id: i.user_id,
             nombre: `${i.profiles.nombre} ${i.profiles.apellidos}`,
             completadas,
-            totalSesiones: (sesiones || []).length,
+            totalSesiones,
             avgPorcentaje,
             currentSesion,
           };
@@ -450,12 +493,17 @@ function TabProgreso({ cursoId }: { cursoId: string }) {
                   </div>
                 </TableCell>
               </TableRow>
-            )))}
-            {(data?.estudiantes || []).length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No hay estudiantes inscritos</TableCell></TableRow>}
+            ))}
+            {(data?.estudiantes || []).length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  No hay estudiantes inscritos
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
     </div>
   );
 }
-
