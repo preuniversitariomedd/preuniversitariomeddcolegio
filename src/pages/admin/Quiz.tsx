@@ -44,6 +44,8 @@ export default function AdminQuiz() {
   const [openAdd, setOpenAdd] = useState(false);
   const [openImport, setOpenImport] = useState(false);
   const [openSmart, setOpenSmart] = useState(false);
+  const [openCopyFrom, setOpenCopyFrom] = useState(false);
+  const [copyFromSesion, setCopyFromSesion] = useState("");
   const [importText, setImportText] = useState("");
   const [smartText, setSmartText] = useState("");
   const [smartParsed, setSmartParsed] = useState<{ pregunta: string; opciones: string[] } | null>(null);
