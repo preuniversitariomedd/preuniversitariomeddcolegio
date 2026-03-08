@@ -321,7 +321,16 @@ export default function AdminEstudiantes() {
         </Dialog>
       </div>
 
-      <Input placeholder="Buscar por nombre o cédula..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input placeholder="Buscar por nombre o cédula..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+        <Select value={colegioFilter} onValueChange={setColegioFilter}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filtrar por colegio" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los colegios</SelectItem>
+            {colegios.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
