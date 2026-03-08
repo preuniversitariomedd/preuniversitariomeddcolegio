@@ -188,6 +188,25 @@ export default function AdminQuiz() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  const aiMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("generar-quiz-ai", {
+        body: { sesion_id: sesionId, tema: aiTema, cantidad: parseInt(aiCantidad), contexto: aiContexto },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({ title: `✅ ${data.insertadas} preguntas generadas con IA` });
+      setOpenAI(false);
+      setAiTema("");
+      setAiContexto("");
+      qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
+    },
+    onError: (e: Error) => toast({ title: "Error IA", description: e.message, variant: "destructive" }),
+  });
+
   const handleSmartParse = () => {
     const parsed = parseSmartQuestion(smartText);
     if (!parsed.pregunta || parsed.opciones.length < 2) {
