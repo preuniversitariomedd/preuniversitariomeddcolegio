@@ -98,7 +98,7 @@ export default function AdminCursos() {
   const updateSesionMutation = useMutation({
     mutationFn: async () => {
       if (!editSesionId) return;
-      const { error } = await supabase.from("sesiones").update({ titulo: editSesionForm.titulo }).eq("id", editSesionId);
+      const { error } = await supabase.from("sesiones").update({ titulo: editSesionForm.titulo, descripcion: editSesionForm.descripcion || null } as any).eq("id", editSesionId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -186,6 +186,7 @@ export default function AdminCursos() {
           <DialogHeader><DialogTitle>Editar Sesión</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Título</Label><Input value={editSesionForm.titulo} onChange={e => setEditSesionForm({ ...editSesionForm, titulo: e.target.value })} /></div>
+            <div><Label>Descripción</Label><Textarea value={editSesionForm.descripcion} onChange={e => setEditSesionForm({ ...editSesionForm, descripcion: e.target.value })} /></div>
             <Button variant="neon" className="w-full" onClick={() => updateSesionMutation.mutate()}>Guardar</Button>
           </div>
         </DialogContent>
@@ -240,7 +241,7 @@ export default function AdminCursos() {
                         <span className="text-sm font-medium">{s.orden}. {s.titulo}</span>
                       </div>
                       <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => { setEditSesionId(s.id); setEditSesionForm({ titulo: s.titulo, descripcion: "" }); }}>
+                        <Button size="sm" variant="ghost" onClick={() => { setEditSesionId(s.id); setEditSesionForm({ titulo: s.titulo, descripcion: s.descripcion || "" }); }}>
                           <Pencil className="h-3 w-3" />
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => toggleSesionMutation.mutate({ id: s.id, estado: s.estado === "abierta" ? "bloqueada" : "abierta" })}>

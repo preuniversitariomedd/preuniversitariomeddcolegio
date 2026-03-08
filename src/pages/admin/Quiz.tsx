@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useClipboardImage } from "@/hooks/useClipboardImage";
-import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste } from "lucide-react";
+import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy } from "lucide-react";
 
 function parseSmartQuestion(text: string) {
   const lines = text.trim().split("\n").map(l => l.trim()).filter(Boolean);
@@ -44,6 +44,8 @@ export default function AdminQuiz() {
   const [openAdd, setOpenAdd] = useState(false);
   const [openImport, setOpenImport] = useState(false);
   const [openSmart, setOpenSmart] = useState(false);
+  const [openCopyFrom, setOpenCopyFrom] = useState(false);
+  const [copyFromSesion, setCopyFromSesion] = useState("");
   const [importText, setImportText] = useState("");
   const [smartText, setSmartText] = useState("");
   const [smartParsed, setSmartParsed] = useState<{ pregunta: string; opciones: string[] } | null>(null);
@@ -150,6 +152,35 @@ export default function AdminQuiz() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] }),
+  });
+
+  const copyFromMutation = useMutation({
+    mutationFn: async () => {
+      if (!copyFromSesion || !sesionId) return;
+      const { data: sourceQuestions } = await supabase.from("quiz_preguntas").select("*").eq("sesion_id", copyFromSesion);
+      if (!sourceQuestions?.length) throw new Error("No hay preguntas en la sesión origen");
+      let count = 0;
+      for (const q of sourceQuestions) {
+        await supabase.from("quiz_preguntas").insert({
+          sesion_id: sesionId,
+          pregunta: q.pregunta,
+          opciones: q.opciones,
+          respuesta_correcta: q.respuesta_correcta,
+          explicacion: q.explicacion,
+          tiempo_limite: q.tiempo_limite,
+          imagen_url: q.imagen_url,
+        });
+        count++;
+      }
+      return count;
+    },
+    onSuccess: (count) => {
+      toast({ title: `${count} preguntas importadas` });
+      setOpenCopyFrom(false);
+      setCopyFromSesion("");
+      qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const handleSmartParse = () => {
@@ -288,6 +319,29 @@ export default function AdminQuiz() {
                   <Textarea rows={12} value={importText} onChange={e => setImportText(e.target.value)} placeholder={"PREGUNTA: ¿Cuál es...?\nA) opción\nB) opción\nC) opción\nD) opción\nCORRECTA: A\nEXPLICACION: ...\nTIEMPO: 60\n---"} />
                   <Button onClick={() => importMutation.mutate()} className="w-full" variant="neon" disabled={importMutation.isPending || !importText.trim()}>
                     {importMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Importar"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={openCopyFrom} onOpenChange={v => { setOpenCopyFrom(v); if (!v) setCopyFromSesion(""); }}>
+              <DialogTrigger asChild><Button variant="outline" size="sm"><Copy className="h-4 w-4 mr-1" />De otra sesión</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Importar preguntas de otra sesión</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Sesión origen</Label>
+                    <Select value={copyFromSesion} onValueChange={setCopyFromSesion}>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar sesión" /></SelectTrigger>
+                      <SelectContent>
+                        {sesiones?.filter(s => s.id !== sesionId).map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.orden}. {s.titulo} ({(s.cursos as any)?.titulo})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="neon" className="w-full" onClick={() => copyFromMutation.mutate()} disabled={copyFromMutation.isPending || !copyFromSesion}>
+                    {copyFromMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Importar preguntas"}
                   </Button>
                 </div>
               </DialogContent>
