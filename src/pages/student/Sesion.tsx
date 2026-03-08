@@ -166,6 +166,7 @@ function QuizComponent({ sesionId }: { sesionId: string }) {
           <div className="text-lg font-medium mb-6"><RenderContent text={q.pregunta} /></div>
           <div className="grid gap-3">
             {opciones.map((opt: string, i: number) => {
+              const letters = ["A", "B", "C", "D", "E", "F"];
               let cls = "p-4 rounded-lg border text-left transition-all cursor-pointer text-sm";
               if (showResult) {
                 if (i === q.respuesta_correcta) cls += " border-success bg-success/10";
@@ -178,7 +179,7 @@ function QuizComponent({ sesionId }: { sesionId: string }) {
               }
               return (
                 <button key={i} className={cls} onClick={() => !showResult && handleAnswer(i)} disabled={showResult}>
-                  <span className="font-bold mr-2">{["A", "B", "C", "D"][i]})</span> <RenderContent text={opt} />
+                  <span className="font-bold mr-2">{letters[i] || i})</span> <RenderContent text={opt} />
                 </button>
               );
             })}
