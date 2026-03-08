@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { playNotification } from "@/lib/sounds";
 import logoMedd from "@/assets/logo-medd.png";
 
 const studentLinks = [
@@ -21,6 +23,7 @@ const studentLinks = [
 export default function StudentLayout() {
   const { user, role, loading, profile, signOut } = useAuth();
   const location = useLocation();
+  const { toast } = useToast();
   const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
 
   useEffect(() => {
@@ -46,6 +49,23 @@ export default function StudentLayout() {
     const interval = setInterval(updatePresence, 60000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Realtime: new competition notification
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel("new-competitions")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "competencias" }, (payload) => {
+        const comp = payload.new as any;
+        playNotification();
+        toast({
+          title: "🎮 ¡Nueva Competencia en Vivo!",
+          description: `"${comp.titulo}" — Código: ${comp.codigo}`,
+          duration: 10000,
+        });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, toast]);
 
   const { data: unreadCount } = useQuery({
     queryKey: ["unread-messages", user?.id],

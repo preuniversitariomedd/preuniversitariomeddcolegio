@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { playCorrect, playIncorrect, playPodium, playCountdown, playPowerUp } from "@/lib/sounds";
 
 type CompState = {
   id: string; titulo: string; codigo: string; estado: string;
@@ -107,6 +108,7 @@ export default function StudentCompetencia() {
         }
         if (updated.estado === "finalizada") {
           confetti({ particleCount: 200, spread: 100 });
+          playPodium();
         }
       })
       .subscribe();
@@ -124,10 +126,10 @@ export default function StudentCompetencia() {
         const { tipo, target } = payload;
         if (target !== "all" && target !== user?.id) return;
         switch (tipo) {
-          case "congelar": setFrozen(true); toast({ title: "❄️ ¡Tiempo congelado!" }); setTimeout(() => setFrozen(false), 5000); break;
-          case "50_50": apply5050(); toast({ title: "✂️ ¡50/50 activado!" }); break;
-          case "x2": setMultiplier(2); toast({ title: "✨ ¡x2 Puntos!" }); break;
-          case "x5_penalty": setPenaltyX5(true); toast({ title: "💀 ¡x5 Penalización activa!", variant: "destructive" }); break;
+          case "congelar": setFrozen(true); playPowerUp(); toast({ title: "❄️ ¡Tiempo congelado!" }); setTimeout(() => setFrozen(false), 5000); break;
+          case "50_50": apply5050(); playPowerUp(); toast({ title: "✂️ ¡50/50 activado!" }); break;
+          case "x2": setMultiplier(2); playPowerUp(); toast({ title: "✨ ¡x2 Puntos!" }); break;
+          case "x5_penalty": setPenaltyX5(true); playPowerUp(); toast({ title: "💀 ¡x5 Penalización activa!", variant: "destructive" }); break;
           case "skip":
             if (target === user?.id) {
               toast({ title: "⏭️ ¡El admin te ha pasado la pregunta!", description: "Recibes 50 puntos de regalo" });
@@ -169,9 +171,9 @@ export default function StudentCompetencia() {
     timerRef.current = setInterval(() => {
       if (frozen) return;
       setTimeLeft(prev => {
-        if (prev <= 1) {
+      if (prev <= 5 && prev > 1) playCountdown();
+      if (prev <= 1) {
           clearInterval(timerRef.current);
-          // Auto-submit wrong if not answered
           if (!answered) submitAnswer(-1);
           return 0;
         }
@@ -215,6 +217,7 @@ export default function StudentCompetencia() {
     }
 
     setShowResult({ correct: isSkip || correcta, points: puntos });
+    if (isSkip || correcta) playCorrect(); else playIncorrect();
 
     await supabase.from("competencia_respuestas").insert({
       competencia_id: comp.id,
