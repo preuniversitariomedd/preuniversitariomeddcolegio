@@ -375,14 +375,21 @@ export default function AdminContenido() {
                 <Dialog open={openContent && (contentForm.pestana_id === p.id || editingContent?.pestana_id === p.id)} onOpenChange={v => { if (!v) { setOpenContent(false); setEditingContent(null); resetForm(); } }}>
                   <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{editingContent ? "Editar Contenido" : "Nuevo Contenido"}</DialogTitle></DialogHeader>
-                    <form onSubmit={e => { e.preventDefault(); editingContent ? updateContentMutation.mutate() : addContentMutation.mutate(); }} className="space-y-4">
+                    <form onSubmit={e => { e.preventDefault(); editingContent ? updateContentMutation.mutate() : addContentMutation.mutate(); }} className="space-y-4" onPaste={handleContentPaste}>
                       <div><Label>Título</Label><Input value={contentForm.titulo} onChange={e => setContentForm({ ...contentForm, titulo: e.target.value })} /></div>
                       <div><Label>Texto / Contenido (Markdown + LaTeX)</Label><Textarea rows={8} value={contentForm.texto} onChange={e => setContentForm({ ...contentForm, texto: e.target.value })} placeholder="Usa $x^2$ para LaTeX inline y $$\int_0^1 f(x)dx$$ para bloques" /></div>
                       <div><Label>Solución (opcional)</Label><Textarea rows={4} value={contentForm.solucion} onChange={e => setContentForm({ ...contentForm, solucion: e.target.value })} /></div>
                       <div className="grid grid-cols-2 gap-4">
                         <div><Label>URL (link, PDF, video)</Label><Input value={contentForm.video_url} onChange={e => setContentForm({ ...contentForm, video_url: e.target.value })} placeholder="https://..." /></div>
-                        <div><Label>URL de Imagen</Label><Input value={contentForm.imagen_url} onChange={e => setContentForm({ ...contentForm, imagen_url: e.target.value })} placeholder="https://..." /></div>
+                        <div>
+                          <Label>URL de Imagen</Label>
+                          <Input value={contentForm.imagen_url} onChange={e => setContentForm({ ...contentForm, imagen_url: e.target.value })} placeholder="https://..." />
+                        </div>
                       </div>
+                      {contentForm.imagen_url && (
+                        <img src={contentForm.imagen_url} alt="Preview" className="max-h-32 rounded border" />
+                      )}
+                      <p className="text-xs text-muted-foreground flex items-center gap-1"><ClipboardPaste className="h-3 w-3" /> Pega una imagen (Ctrl+V) para adjuntarla automáticamente</p>
                       <div className="grid grid-cols-2 gap-4">
                         <div><Label>Grupo (para agrupar en desplegable)</Label><Input value={contentForm.grupo} onChange={e => setContentForm({ ...contentForm, grupo: e.target.value })} placeholder="Ej: Fórmulas, Teoremas..." /></div>
                         <div><Label>Orden</Label><Input type="number" value={contentForm.orden} onChange={e => setContentForm({ ...contentForm, orden: parseInt(e.target.value) || 0 })} /></div>
