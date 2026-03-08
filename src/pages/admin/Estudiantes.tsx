@@ -186,6 +186,7 @@ export default function AdminEstudiantes() {
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
   const [form, setForm] = useState({ nombre: "", apellidos: "", cedula: "", fecha_nacimiento: "", colegio: "" });
   const [search, setSearch] = useState("");
+  const [colegioFilter, setColegioFilter] = useState<string>("all");
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["admin-students"],
