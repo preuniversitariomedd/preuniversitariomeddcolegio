@@ -4,12 +4,19 @@ import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon,
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect, createContext, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { playNotification } from "@/lib/sounds";
 import logoMedd from "@/assets/logo-medd.png";
+
+// Context to share the "viewed as" student ID with child pages
+const ViewAsStudentContext = createContext<string | null>(null);
+export function useViewAsStudent() {
+  return useContext(ViewAsStudentContext);
+}
 
 const studentLinks = [
   { title: "Inicio", url: "/student", icon: LayoutDashboard },
@@ -26,6 +33,20 @@ export default function StudentLayout() {
   const location = useLocation();
   const { toast } = useToast();
   const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
+  const [viewAsStudentId, setViewAsStudentId] = useState<string | null>(null);
+
+  // Fetch students list for admin preview selector
+  const { data: students } = useQuery({
+    queryKey: ["all-students-for-selector"],
+    queryFn: async () => {
+      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("rol", "estudiante").eq("activo", true);
+      if (!roles?.length) return [];
+      const ids = roles.map(r => r.user_id);
+      const { data: profiles } = await supabase.from("profiles").select("id, nombre, apellidos").in("id", ids).order("apellidos");
+      return profiles || [];
+    },
+    enabled: isAdminPreview,
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -86,16 +107,30 @@ export default function StudentLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {isAdminPreview && (
-        <div className="bg-accent text-accent-foreground text-center text-sm py-1.5 flex items-center justify-center gap-2 font-medium">
+        <div className="bg-accent text-accent-foreground text-sm py-1.5 flex items-center justify-center gap-2 font-medium flex-wrap px-4">
           <ShieldCheck className="h-4 w-4" />
           Vista previa como estudiante
+          <Select value={viewAsStudentId || "self"} onValueChange={(v) => setViewAsStudentId(v === "self" ? null : v)}>
+            <SelectTrigger className="h-7 w-auto min-w-[180px] text-xs bg-background border-border">
+              <SelectValue placeholder="Tú mismo (admin)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="self">Tú mismo (admin)</SelectItem>
+              {students?.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.apellidos}, {s.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <a href="/admin" className="underline ml-2 hover:text-primary">← Volver al panel</a>
         </div>
       )}
       <header className="hidden md:flex h-14 items-center border-b border-border px-6 bg-card justify-between">
         <div className="flex items-center gap-4">
           <img src={logoMedd} alt="MEDD" className="w-8 h-8 rounded-full object-cover" />
-          <h1 className="font-display font-bold text-primary text-lg">MEDD</h1>
+          <div>
+            <h1 className="font-display font-bold text-primary text-lg leading-tight">MEDD</h1>
+            <p className="text-[9px] text-muted-foreground leading-tight">Metodología Educativa Didáctica a Distancia</p>
+          </div>
           <nav className="flex gap-1">
             {studentLinks.map(item => (
               <NavLink key={item.url} to={item.url} end={item.url === "/student"}
@@ -126,9 +161,11 @@ export default function StudentLayout() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-auto">
-        <Outlet />
-      </main>
+      <ViewAsStudentContext.Provider value={viewAsStudentId}>
+        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-auto">
+          <Outlet />
+        </main>
+      </ViewAsStudentContext.Provider>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around py-2 z-50">
         {studentLinks.map(item => {
