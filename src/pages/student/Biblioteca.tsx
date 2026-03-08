@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { ExternalLink, FileText, Video, Link as LinkIcon, Image, File, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useViewAsStudent } from "@/components/StudentLayout";
+import { useAuth } from "@/components/AuthProvider";
 
 const typeIcons: Record<string, any> = { pdf: FileText, video: Video, link: LinkIcon, imagen: Image, documento: File };
 

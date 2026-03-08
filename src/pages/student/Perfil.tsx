@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2, User, Camera } from "lucide-react";
+import { useViewAsStudent } from "@/components/StudentLayout";
+import { useQuery } from "@tanstack/react-query";
 
 const checks = [
   { label: "8+ caracteres", test: (p: string) => p.length >= 8 },

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { Send, Paperclip, FileText, X } from "lucide-react";
+import { Send, Paperclip, FileText, X, Eye } from "lucide-react";
+import { useViewAsStudent } from "@/components/StudentLayout";
 
 export default function StudentMensajes() {
   const { user } = useAuth();
