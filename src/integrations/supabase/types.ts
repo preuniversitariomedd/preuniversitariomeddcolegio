@@ -314,6 +314,63 @@ export type Database = {
         }
         Relationships: []
       }
+      grupo_miembros: {
+        Row: {
+          created_at: string | null
+          grupo_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          grupo_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          grupo_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupo_miembros_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grupo_miembros_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupos: {
+        Row: {
+          created_at: string | null
+          descripcion: string | null
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       inscripciones: {
         Row: {
           created_at: string | null
