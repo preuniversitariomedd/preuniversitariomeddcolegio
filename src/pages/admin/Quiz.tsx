@@ -154,6 +154,35 @@ export default function AdminQuiz() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] }),
   });
 
+  const copyFromMutation = useMutation({
+    mutationFn: async () => {
+      if (!copyFromSesion || !sesionId) return;
+      const { data: sourceQuestions } = await supabase.from("quiz_preguntas").select("*").eq("sesion_id", copyFromSesion);
+      if (!sourceQuestions?.length) throw new Error("No hay preguntas en la sesión origen");
+      let count = 0;
+      for (const q of sourceQuestions) {
+        await supabase.from("quiz_preguntas").insert({
+          sesion_id: sesionId,
+          pregunta: q.pregunta,
+          opciones: q.opciones,
+          respuesta_correcta: q.respuesta_correcta,
+          explicacion: q.explicacion,
+          tiempo_limite: q.tiempo_limite,
+          imagen_url: q.imagen_url,
+        });
+        count++;
+      }
+      return count;
+    },
+    onSuccess: (count) => {
+      toast({ title: `${count} preguntas importadas` });
+      setOpenCopyFrom(false);
+      setCopyFromSesion("");
+      qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const handleSmartParse = () => {
     const parsed = parseSmartQuestion(smartText);
     if (!parsed.pregunta || parsed.opciones.length < 2) {
