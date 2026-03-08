@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Paperclip, FileText, Image as ImageIcon, X, Trash2, Megaphone, Loader2 } from "lucide-react";
+import { Send, Paperclip, FileText, Image as ImageIcon, X, Trash2, Megaphone, Loader2, Monitor, Smartphone } from "lucide-react";
 
 export default function AdminMensajes() {
   const { user } = useAuth();
@@ -39,6 +40,17 @@ export default function AdminMensajes() {
     },
   });
 
+  const { data: presencia } = useQuery({
+    queryKey: ["presencia", selectedUser],
+    queryFn: async () => {
+      if (!selectedUser) return null;
+      const { data } = await supabase.from("presencia").select("*").eq("user_id", selectedUser).maybeSingle();
+      return data;
+    },
+    enabled: !!selectedUser,
+    refetchInterval: 30000,
+  });
+
   const { data: messages } = useQuery({
     queryKey: ["admin-messages", selectedUser],
     queryFn: async () => {
@@ -61,7 +73,6 @@ export default function AdminMensajes() {
     setUploadProgress(0);
     const ext = file.name.split(".").pop();
     const path = `mensajes/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    // Simulate progress
     const interval = setInterval(() => setUploadProgress(p => Math.min(p + 15, 90)), 200);
     const { error } = await supabase.storage.from("contenido").upload(path, file);
     clearInterval(interval);
@@ -146,6 +157,9 @@ export default function AdminMensajes() {
 
   const isImage = (name: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
 
+  const isOnline = presencia && (Date.now() - new Date(presencia.last_seen).getTime() < 120000);
+  const selectedStudent = students?.find(s => s.id === selectedUser);
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-display font-bold">Mensajería</h2>
@@ -159,6 +173,28 @@ export default function AdminMensajes() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Presence indicator */}
+        {selectedUser && selectedStudent && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-sm">
+                  <span className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-muted-foreground/40"}`} />
+                  {presencia?.dispositivo === "móvil" ? <Smartphone className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+                  <span className="font-medium">{selectedStudent.nombre}</span>
+                  <span className="text-xs text-muted-foreground">{isOnline ? "En línea" : "Desconectado"}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs space-y-1">
+                <p><strong>IP:</strong> {presencia?.ip || "Desconocida"}</p>
+                <p><strong>Dispositivo:</strong> {presencia?.dispositivo || "Desconocido"}</p>
+                <p><strong>Última conexión:</strong> {presencia?.last_seen ? new Date(presencia.last_seen).toLocaleString("es-EC") : "—"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
         <Button variant="outline" size="sm" onClick={() => setBroadcastOpen(true)}>
           <Megaphone className="h-4 w-4 mr-1" />Mensaje masivo
         </Button>

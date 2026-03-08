@@ -27,6 +27,25 @@ export default function StudentLayout() {
     localStorage.setItem("theme", dark ? "dark" : "light");
   }, [dark]);
 
+  // Presence tracking
+  useEffect(() => {
+    if (!user) return;
+    const updatePresence = async () => {
+      const ua = navigator.userAgent;
+      const dispositivo = /Mobile|Android|iPhone/i.test(ua) ? "móvil" : "escritorio";
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const { ip } = await res.json();
+        await supabase.from("presencia").upsert({ user_id: user.id, last_seen: new Date().toISOString(), dispositivo, ip, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      } catch {
+        await supabase.from("presencia").upsert({ user_id: user.id, last_seen: new Date().toISOString(), dispositivo, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      }
+    };
+    updatePresence();
+    const interval = setInterval(updatePresence, 60000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const { data: unreadCount } = useQuery({
     queryKey: ["unread-messages", user?.id],
     queryFn: async () => {
