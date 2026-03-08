@@ -242,6 +242,41 @@ export type Database = {
           },
         ]
       }
+      presencia: {
+        Row: {
+          dispositivo: string | null
+          id: string
+          ip: string | null
+          last_seen: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          dispositivo?: string | null
+          id?: string
+          ip?: string | null
+          last_seen?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          dispositivo?: string | null
+          id?: string
+          ip?: string | null
+          last_seen?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencia_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           apellidos: string
