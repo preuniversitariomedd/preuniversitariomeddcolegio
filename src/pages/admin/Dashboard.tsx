@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, TrendingUp, BookOpen, BarChart3, Award, Clock, Target, GraduationCap } from "lucide-react";
+import { Users, TrendingUp, BookOpen, BarChart3, Award, Clock, Target, GraduationCap, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -8,6 +8,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { downloadCSV } from "@/lib/exportUtils";
+import { Button } from "@/components/ui/button";
 
 export default function AdminDashboard() {
   const [cursoFilter, setCursoFilter] = useState<string>("all");
@@ -163,6 +165,13 @@ export default function AdminDashboard() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={() => {
+            const rows = chartData?.rankingData?.map(s => ({ Estudiante: s.name, Promedio: s.promedio + "%", Sesiones: s.sesiones })) || [];
+            const kpis = [{ Métrica: "Total Estudiantes", Valor: stats?.totalStudents }, { Métrica: "Activos", Valor: stats?.activeStudents }, { Métrica: "Avance Promedio", Valor: stats?.avgProgress + "%" }, { Métrica: "Puntaje Quiz", Valor: stats?.avgQuiz + "%" }];
+            downloadCSV([...kpis, {}, ...rows], `dashboard-reporte-${new Date().toISOString().slice(0,10)}`);
+          }}>
+            <Download className="h-3 w-3 mr-1" />Exportar CSV
+          </Button>
           <Badge variant="outline" className="text-xs">
             <Clock className="h-3 w-3 mr-1" />
             Actualizado en tiempo real

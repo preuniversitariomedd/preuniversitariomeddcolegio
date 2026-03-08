@@ -184,7 +184,7 @@ export default function AdminEstudiantes() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
-  const [form, setForm] = useState({ nombre: "", apellidos: "", cedula: "", fecha_nacimiento: "" });
+  const [form, setForm] = useState({ nombre: "", apellidos: "", cedula: "", fecha_nacimiento: "", colegio: "" });
   const [search, setSearch] = useState("");
 
   const { data: students, isLoading } = useQuery({
@@ -223,7 +223,7 @@ export default function AdminEstudiantes() {
     },
     onSuccess: () => {
       toast({ title: "Estudiante creado", description: `Cédula: ${form.cedula}, Contraseña: 123*789*h` });
-      setForm({ nombre: "", apellidos: "", cedula: "", fecha_nacimiento: "" });
+      setForm({ nombre: "", apellidos: "", cedula: "", fecha_nacimiento: "", colegio: "" });
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-students"] });
     },
@@ -306,6 +306,7 @@ export default function AdminEstudiantes() {
               </div>
               <div><Label>Cédula (10 dígitos)</Label><Input value={form.cedula} onChange={e => setForm({ ...form, cedula: e.target.value.replace(/\D/g, "").slice(0, 10) })} maxLength={10} required /></div>
               <div><Label>Fecha de Nacimiento</Label><Input type="date" value={form.fecha_nacimiento} onChange={e => setForm({ ...form, fecha_nacimiento: e.target.value })} /></div>
+              <div><Label>Colegio</Label><Input value={(form as any).colegio || ""} onChange={e => setForm({ ...form, colegio: e.target.value } as any)} placeholder="Nombre del colegio" /></div>
               {form.fecha_nacimiento && <p className="text-sm text-muted-foreground">Edad: {calcAge(form.fecha_nacimiento)}</p>}
               <Button type="submit" className="w-full" variant="neon" disabled={createMutation.isPending}>
                 {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Crear Estudiante"}
@@ -326,13 +327,15 @@ export default function AdminEstudiantes() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Cédula</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Edad</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead>Cursos</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Acciones</TableHead>
+                     <TableHead>Cédula</TableHead>
+                     <TableHead>Nombre</TableHead>
+                     <TableHead>Colegio</TableHead>
+                     <TableHead>Edad</TableHead>
+                     <TableHead>Inscripción</TableHead>
+                     <TableHead>Rol</TableHead>
+                     <TableHead>Cursos</TableHead>
+                     <TableHead>Estado</TableHead>
+                     <TableHead>Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -343,7 +346,9 @@ export default function AdminEstudiantes() {
                       <TableRow key={s.id}>
                         <TableCell className="font-mono text-sm">{s.cedula}</TableCell>
                         <TableCell>{s.nombre} {s.apellidos}</TableCell>
-                        <TableCell className="text-sm whitespace-nowrap">{calcAge(s.fecha_nacimiento)}</TableCell>
+                         <TableCell className="text-sm">{(s as any).colegio || <span className="text-muted-foreground">—</span>}</TableCell>
+                         <TableCell className="text-sm whitespace-nowrap">{calcAge(s.fecha_nacimiento)}</TableCell>
+                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{s.created_at ? new Date(s.created_at).toLocaleDateString("es-EC") : "—"}</TableCell>
                         <TableCell>
                           {role?.id ? (
                             <Select defaultValue={role.rol} onValueChange={v => updateRoleMutation.mutate({ roleId: role.id, rol: v })}>
@@ -409,7 +414,7 @@ export default function AdminEstudiantes() {
                     );
                   })}
                   {(!filtered || filtered.length === 0) && (
-                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No hay estudiantes registrados</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No hay estudiantes registrados</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
