@@ -77,10 +77,10 @@ export default function AdminMensajes() {
       <h2 className="text-2xl font-display font-bold">Mensajería</h2>
       <div className="flex gap-4">
         <div className="w-64">
-          <Select value={selectedUser} onValueChange={setSelectedUser}>
+          <Select value={selectedUser || "all"} onValueChange={v => setSelectedUser(v === "all" ? "" : v)}>
             <SelectTrigger><SelectValue placeholder="Filtrar por usuario" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               {students?.map(s => <SelectItem key={s.id} value={s.id}>{s.nombre} {s.apellidos}</SelectItem>)}
             </SelectContent>
           </Select>
