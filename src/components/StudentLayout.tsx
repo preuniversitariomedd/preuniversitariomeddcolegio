@@ -1,6 +1,6 @@
 import { useAuth } from "@/components/AuthProvider";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon, Sun, Zap } from "lucide-react";
+import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon, Sun, Zap, ShieldCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ const studentLinks = [
 
 export default function StudentLayout() {
   const { user, role, loading, profile, signOut } = useAuth();
+  const isAdminPreview = role === "admin";
   const location = useLocation();
   const { toast } = useToast();
   const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
@@ -84,6 +85,13 @@ export default function StudentLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {isAdminPreview && (
+        <div className="bg-accent text-accent-foreground text-center text-sm py-1.5 flex items-center justify-center gap-2 font-medium">
+          <ShieldCheck className="h-4 w-4" />
+          Vista previa como estudiante
+          <a href="/admin" className="underline ml-2 hover:text-primary">← Volver al panel</a>
+        </div>
+      )}
       <header className="hidden md:flex h-14 items-center border-b border-border px-6 bg-card justify-between">
         <div className="flex items-center gap-4">
           <img src={logoMedd} alt="MEDD" className="w-8 h-8 rounded-full object-cover" />
