@@ -1,15 +1,27 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, TrendingUp, BookOpen, HelpCircle, BarChart3, Award, Clock, Target, GraduationCap } from "lucide-react";
+import { Users, TrendingUp, BookOpen, BarChart3, Award, Clock, Target, GraduationCap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminDashboard() {
+  const [cursoFilter, setCursoFilter] = useState<string>("all");
+
+  const { data: cursos } = useQuery({
+    queryKey: ["admin-cursos-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("cursos").select("id, titulo").order("orden");
+      return data || [];
+    },
+  });
+
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["admin-stats"],
+    queryKey: ["admin-stats", cursoFilter],
     queryFn: async () => {
       const [
         { count: totalStudents },
@@ -27,11 +39,19 @@ export default function AdminDashboard() {
         supabase.from("cursos").select("*", { count: "exact", head: true }),
       ]);
 
-      const avgProgress = progreso?.length ? Math.round(progreso.reduce((a, b) => a + (b.porcentaje || 0), 0) / progreso.length) : 0;
-      const quizUsers = progreso?.filter(p => (p.intentos_quiz || 0) > 0) || [];
+      // If filtering by course, get session IDs for that course
+      let filteredProgreso = progreso || [];
+      if (cursoFilter !== "all") {
+        const { data: sesiones } = await supabase.from("sesiones").select("id").eq("curso_id", cursoFilter);
+        const sessionIds = new Set(sesiones?.map(s => s.id) || []);
+        filteredProgreso = filteredProgreso.filter(p => sessionIds.has(p.sesion_id));
+      }
+
+      const avgProgress = filteredProgreso.length ? Math.round(filteredProgreso.reduce((a, b) => a + (b.porcentaje || 0), 0) / filteredProgreso.length) : 0;
+      const quizUsers = filteredProgreso.filter(p => (p.intentos_quiz || 0) > 0);
       const avgQuiz = quizUsers.length ? Math.round(quizUsers.reduce((a, b) => a + ((b.preguntas_correctas || 0) / Math.max(b.intentos_quiz || 1, 1)) * 100, 0) / quizUsers.length) : 0;
-      const totalTime = progreso?.reduce((a, b) => a + (b.tiempo_invertido || 0), 0) || 0;
-      const completedSessions = progreso?.filter(p => (p.porcentaje || 0) >= 100).length || 0;
+      const totalTime = filteredProgreso.reduce((a, b) => a + (b.tiempo_invertido || 0), 0);
+      const completedSessions = filteredProgreso.filter(p => (p.porcentaje || 0) >= 100).length;
 
       return {
         totalStudents: totalStudents || 0,
@@ -43,32 +63,34 @@ export default function AdminDashboard() {
         totalCursos: totalCursos || 0,
         totalTime,
         completedSessions,
-        progreso: progreso || [],
+        progreso: filteredProgreso,
       };
     },
   });
 
   const { data: chartData } = useQuery({
-    queryKey: ["admin-charts"],
+    queryKey: ["admin-charts", cursoFilter],
     queryFn: async () => {
-      const { data: sesiones } = await supabase.from("sesiones").select("id, titulo, orden").order("orden");
+      let sesionesQuery = supabase.from("sesiones").select("id, titulo, orden, curso_id").order("orden");
+      if (cursoFilter !== "all") sesionesQuery = sesionesQuery.eq("curso_id", cursoFilter);
+      const { data: sesiones } = await sesionesQuery;
+      
+      const sessionIds = new Set((sesiones || []).map(s => s.id));
       const { data: progreso } = await supabase.from("progreso_estudiante").select("sesion_id, porcentaje, user_id, preguntas_correctas, intentos_quiz");
+      const filteredProgreso = (progreso || []).filter(p => sessionIds.has(p.sesion_id));
+      
       const { data: profiles } = await supabase.from("profiles").select("id, nombre, apellidos");
       const { data: roles } = await supabase.from("user_roles").select("user_id").eq("rol", "estudiante");
-
       const studentIds = new Set(roles?.map(r => r.user_id) || []);
 
-      // Bar chart: avg progress per session
       const barData = (sesiones || []).map(s => {
-        const sessionProgress = (progreso || []).filter(p => p.sesion_id === s.id);
+        const sessionProgress = filteredProgreso.filter(p => p.sesion_id === s.id);
         const avg = sessionProgress.length ? Math.round(sessionProgress.reduce((a, b) => a + (b.porcentaje || 0), 0) / sessionProgress.length) : 0;
         return { name: `S${s.orden}`, fullName: s.titulo, progreso: avg };
       });
 
-      // Donut: status distribution
-      const allProgress = progreso || [];
-      const completed = allProgress.filter(p => (p.porcentaje || 0) >= 100).length;
-      const inProgress = allProgress.filter(p => (p.porcentaje || 0) > 0 && (p.porcentaje || 0) < 100).length;
+      const completed = filteredProgreso.filter(p => (p.porcentaje || 0) >= 100).length;
+      const inProgress = filteredProgreso.filter(p => (p.porcentaje || 0) > 0 && (p.porcentaje || 0) < 100).length;
       const notStarted = Math.max(0, (sesiones?.length || 0) * studentIds.size - completed - inProgress);
       const donutData = [
         { name: "Completadas", value: completed },
@@ -76,9 +98,8 @@ export default function AdminDashboard() {
         { name: "Sin iniciar", value: notStarted },
       ];
 
-      // Ranking students by avg progress
       const studentMap = new Map<string, { porcentajes: number[]; correctas: number; intentos: number }>();
-      (progreso || []).forEach(p => {
+      filteredProgreso.forEach(p => {
         if (studentIds.has(p.user_id)) {
           if (!studentMap.has(p.user_id)) studentMap.set(p.user_id, { porcentajes: [], correctas: 0, intentos: 0 });
           const entry = studentMap.get(p.user_id)!;
@@ -91,21 +112,16 @@ export default function AdminDashboard() {
         .map(([userId, vals]) => {
           const p = profiles?.find(pr => pr.id === userId);
           const promedio = Math.round(vals.porcentajes.reduce((a, b) => a + b, 0) / vals.porcentajes.length);
-          return {
-            name: p ? `${p.nombre} ${p.apellidos?.charAt(0) || ""}.` : "—",
-            promedio,
-            sesiones: vals.porcentajes.length,
-          };
+          return { name: p ? `${p.nombre} ${p.apellidos?.charAt(0) || ""}.` : "—", promedio, sesiones: vals.porcentajes.length };
         })
         .sort((a, b) => b.promedio - a.promedio)
         .slice(0, 10);
 
-      // Performance distribution
       const perfData = [
-        { range: "0-25%", count: allProgress.filter(p => (p.porcentaje || 0) <= 25).length },
-        { range: "26-50%", count: allProgress.filter(p => (p.porcentaje || 0) > 25 && (p.porcentaje || 0) <= 50).length },
-        { range: "51-75%", count: allProgress.filter(p => (p.porcentaje || 0) > 50 && (p.porcentaje || 0) <= 75).length },
-        { range: "76-100%", count: allProgress.filter(p => (p.porcentaje || 0) > 75).length },
+        { range: "0-25%", count: filteredProgreso.filter(p => (p.porcentaje || 0) <= 25).length },
+        { range: "26-50%", count: filteredProgreso.filter(p => (p.porcentaje || 0) > 25 && (p.porcentaje || 0) <= 50).length },
+        { range: "51-75%", count: filteredProgreso.filter(p => (p.porcentaje || 0) > 50 && (p.porcentaje || 0) <= 75).length },
+        { range: "76-100%", count: filteredProgreso.filter(p => (p.porcentaje || 0) > 75).length },
       ];
 
       return { barData, donutData, rankingData, perfData };
@@ -130,15 +146,28 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-display font-bold">Dashboard</h2>
           <p className="text-sm text-muted-foreground">Resumen general de la plataforma</p>
         </div>
-        <Badge variant="outline" className="text-xs">
-          <Clock className="h-3 w-3 mr-1" />
-          Actualizado en tiempo real
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Select value={cursoFilter} onValueChange={setCursoFilter}>
+            <SelectTrigger className="w-[200px] h-9">
+              <SelectValue placeholder="Todos los cursos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los cursos</SelectItem>
+              {cursos?.map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.titulo}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Badge variant="outline" className="text-xs">
+            <Clock className="h-3 w-3 mr-1" />
+            Actualizado en tiempo real
+          </Badge>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -173,7 +202,6 @@ export default function AdminDashboard() {
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Bar Chart */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-display flex items-center gap-2">
@@ -200,7 +228,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Donut Chart */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-display flex items-center gap-2">
@@ -236,7 +263,6 @@ export default function AdminDashboard() {
 
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Performance Distribution */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-display flex items-center gap-2">
@@ -261,7 +287,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Ranking */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-display flex items-center gap-2">
