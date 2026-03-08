@@ -210,6 +210,7 @@ export default function AdminEstudiantes() {
                               <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="docente">Docente</SelectItem>
                                 <SelectItem value="estudiante">Estudiante</SelectItem>
                               </SelectContent>
                             </Select>
