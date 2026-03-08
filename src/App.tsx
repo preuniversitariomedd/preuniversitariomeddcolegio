@@ -17,6 +17,7 @@ const AdminQuiz = lazy(() => import("./pages/admin/Quiz"));
 const AdminCompetencia = lazy(() => import("./pages/admin/Competencia"));
 const AdminBiblioteca = lazy(() => import("./pages/admin/Biblioteca"));
 const AdminMensajes = lazy(() => import("./pages/admin/Mensajes"));
+const AdminPerfil = lazy(() => import("./pages/admin/Perfil"));
 const StudentLayout = lazy(() => import("./components/StudentLayout"));
 const StudentDashboard = lazy(() => import("./pages/student/Dashboard"));
 const StudentCursos = lazy(() => import("./pages/student/Cursos"));
@@ -69,6 +70,7 @@ const App = () => (
                 <Route path="competencia" element={<AdminCompetencia />} />
                 <Route path="biblioteca" element={<AdminBiblioteca />} />
                 <Route path="mensajes" element={<AdminMensajes />} />
+                <Route path="perfil" element={<AdminPerfil />} />
               </Route>
               <Route path="/student" element={<StudentLayout />}>
                 <Route index element={<StudentDashboard />} />
