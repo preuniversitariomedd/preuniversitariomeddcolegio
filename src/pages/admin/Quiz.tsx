@@ -396,9 +396,19 @@ export default function AdminQuiz() {
         )}
       </div>
 
-      {sesionId && (
+      {sesionId && (() => {
+        const filteredPreguntas = preguntas?.filter(p =>
+          !searchFilter || p.pregunta.toLowerCase().includes(searchFilter.toLowerCase())
+        );
+        return (
         <Card>
-          <CardHeader><CardTitle className="text-lg">{preguntas?.length || 0} preguntas</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <CardTitle className="text-lg">{filteredPreguntas?.length || 0} de {preguntas?.length || 0} preguntas</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Filtrar preguntas..." value={searchFilter} onChange={e => setSearchFilter(e.target.value)} className="pl-8 h-9" />
+            </div>
+          </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
@@ -413,7 +423,7 @@ export default function AdminQuiz() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {preguntas?.map((p, i) => {
+                  {filteredPreguntas?.map((p, i) => {
                     const opcs = (p.opciones as any[]) || [];
                     return (
                       <TableRow key={p.id}>
@@ -426,12 +436,18 @@ export default function AdminQuiz() {
                       </TableRow>
                     );
                   })}
+                  {(!filteredPreguntas || filteredPreguntas.length === 0) && (
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      {searchFilter ? "No se encontraron preguntas con ese filtro" : "No hay preguntas en esta sesión"}
+                    </TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
         </Card>
-      )}
+        );
+      })()}
     </div>
   );
 }
