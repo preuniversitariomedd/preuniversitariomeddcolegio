@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useClipboardImage } from "@/hooks/useClipboardImage";
-import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy } from "lucide-react";
+import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy, Sparkles, Search } from "lucide-react";
 
 function parseSmartQuestion(text: string) {
   const lines = text.trim().split("\n").map(l => l.trim()).filter(Boolean);
@@ -53,6 +53,11 @@ export default function AdminQuiz() {
   const [smartExplicacion, setSmartExplicacion] = useState("");
   const [smartTiempo, setSmartTiempo] = useState("60");
   const [form, setForm] = useState({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60", imagen_url: "" });
+  const [searchFilter, setSearchFilter] = useState("");
+  const [openAI, setOpenAI] = useState(false);
+  const [aiTema, setAiTema] = useState("");
+  const [aiContexto, setAiContexto] = useState("");
+  const [aiCantidad, setAiCantidad] = useState("5");
   
   const { handlePaste: handleSmartPaste } = useClipboardImage(useCallback((url: string) => {
     toast({ title: "Imagen pegada desde portapapeles" });
@@ -181,6 +186,25 @@ export default function AdminQuiz() {
       qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const aiMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("generar-quiz-ai", {
+        body: { sesion_id: sesionId, tema: aiTema, cantidad: parseInt(aiCantidad), contexto: aiContexto },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({ title: `✅ ${data.insertadas} preguntas generadas con IA` });
+      setOpenAI(false);
+      setAiTema("");
+      setAiContexto("");
+      qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
+    },
+    onError: (e: Error) => toast({ title: "Error IA", description: e.message, variant: "destructive" }),
   });
 
   const handleSmartParse = () => {
@@ -346,13 +370,45 @@ export default function AdminQuiz() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            <Dialog open={openAI} onOpenChange={v => { setOpenAI(v); if (!v) { setAiTema(""); setAiContexto(""); } }}>
+              <DialogTrigger asChild><Button variant="neon" size="sm" className="bg-gradient-to-r from-primary to-accent"><Sparkles className="h-4 w-4 mr-1" />Generar con IA</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Generar preguntas con IA</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div><Label>Tema *</Label><Input value={aiTema} onChange={e => setAiTema(e.target.value)} placeholder="Ej: Tabla periódica, enlaces químicos" /></div>
+                  <div><Label>Contexto adicional (opcional)</Label><Textarea rows={3} value={aiContexto} onChange={e => setAiContexto(e.target.value)} placeholder="Nivel de dificultad, subtemas específicos..." /></div>
+                  <div><Label>Cantidad de preguntas</Label>
+                    <Select value={aiCantidad} onValueChange={setAiCantidad}>
+                      <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[3, 5, 7, 10].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="neon" className="w-full" onClick={() => aiMutation.mutate()} disabled={aiMutation.isPending || !aiTema.trim()}>
+                    {aiMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-1" />Generando...</> : <><Sparkles className="h-4 w-4 mr-1" />Generar</>}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
       </div>
 
-      {sesionId && (
+      {sesionId && (() => {
+        const filteredPreguntas = preguntas?.filter(p =>
+          !searchFilter || p.pregunta.toLowerCase().includes(searchFilter.toLowerCase())
+        );
+        return (
         <Card>
-          <CardHeader><CardTitle className="text-lg">{preguntas?.length || 0} preguntas</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <CardTitle className="text-lg">{filteredPreguntas?.length || 0} de {preguntas?.length || 0} preguntas</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Filtrar preguntas..." value={searchFilter} onChange={e => setSearchFilter(e.target.value)} className="pl-8 h-9" />
+            </div>
+          </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
@@ -367,7 +423,7 @@ export default function AdminQuiz() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {preguntas?.map((p, i) => {
+                  {filteredPreguntas?.map((p, i) => {
                     const opcs = (p.opciones as any[]) || [];
                     return (
                       <TableRow key={p.id}>
@@ -380,12 +436,18 @@ export default function AdminQuiz() {
                       </TableRow>
                     );
                   })}
+                  {(!filteredPreguntas || filteredPreguntas.length === 0) && (
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      {searchFilter ? "No se encontraron preguntas con ese filtro" : "No hay preguntas en esta sesión"}
+                    </TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
         </Card>
-      )}
+        );
+      })()}
     </div>
   );
 }

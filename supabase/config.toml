@@ -1,1 +1,4 @@
 project_id = "ldrryrowblbcddahhsou"
+
+[functions.generar-quiz-ai]
+verify_jwt = false
