@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Zap, Users, Clock, Trophy, Snowflake, Divide, X2, LogIn, Loader2, CheckCircle, XCircle
+  Zap, Users, Clock, Trophy, Snowflake, Divide, LogIn, Loader2, CheckCircle, XCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
