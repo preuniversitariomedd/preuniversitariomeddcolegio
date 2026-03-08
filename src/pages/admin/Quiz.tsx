@@ -53,6 +53,11 @@ export default function AdminQuiz() {
   const [smartExplicacion, setSmartExplicacion] = useState("");
   const [smartTiempo, setSmartTiempo] = useState("60");
   const [form, setForm] = useState({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60", imagen_url: "" });
+  const [searchFilter, setSearchFilter] = useState("");
+  const [openAI, setOpenAI] = useState(false);
+  const [aiTema, setAiTema] = useState("");
+  const [aiContexto, setAiContexto] = useState("");
+  const [aiCantidad, setAiCantidad] = useState("5");
   
   const { handlePaste: handleSmartPaste } = useClipboardImage(useCallback((url: string) => {
     toast({ title: "Imagen pegada desde portapapeles" });
