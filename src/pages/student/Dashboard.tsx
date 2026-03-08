@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { BookOpen, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useViewAsStudent } from "@/components/StudentLayout";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -16,27 +17,40 @@ function getGreeting() {
 
 export default function StudentDashboard() {
   const { profile } = useAuth();
+  const viewAsId = useViewAsStudent();
+  const targetId = viewAsId || profile?.id;
+
+  const { data: viewProfile } = useQuery({
+    queryKey: ["view-as-profile", viewAsId],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("nombre, apellidos").eq("id", viewAsId!).single();
+      return data;
+    },
+    enabled: !!viewAsId,
+  });
+
+  const displayName = viewAsId ? viewProfile?.nombre : profile?.nombre;
 
   const { data: cursos, isLoading } = useQuery({
-    queryKey: ["student-cursos"],
+    queryKey: ["student-cursos", targetId],
     queryFn: async () => {
       const { data } = await supabase
         .from("inscripciones")
         .select("curso_id, cursos(id, titulo, color, descripcion)")
-        .eq("user_id", profile!.id);
+        .eq("user_id", targetId!);
       return data?.map(d => (d.cursos as any)) || [];
     },
-    enabled: !!profile,
+    enabled: !!targetId,
   });
 
   const { data: progreso } = useQuery({
-    queryKey: ["student-progreso-global"],
+    queryKey: ["student-progreso-global", targetId],
     queryFn: async () => {
-      const { data } = await supabase.from("progreso_estudiante").select("porcentaje").eq("user_id", profile!.id);
+      const { data } = await supabase.from("progreso_estudiante").select("porcentaje").eq("user_id", targetId!);
       if (!data?.length) return 0;
       return Math.round(data.reduce((a, b) => a + (b.porcentaje || 0), 0) / data.length);
     },
-    enabled: !!profile,
+    enabled: !!targetId,
   });
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -44,7 +58,7 @@ export default function StudentDashboard() {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-2xl font-display font-bold">{getGreeting()}, {profile?.nombre}!</h2>
+        <h2 className="text-2xl font-display font-bold">{getGreeting()}, {displayName}!</h2>
         <p className="text-muted-foreground">Tu progreso general</p>
       </motion.div>
 
