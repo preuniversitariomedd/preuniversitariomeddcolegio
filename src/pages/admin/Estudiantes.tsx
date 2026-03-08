@@ -186,6 +186,7 @@ export default function AdminEstudiantes() {
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
   const [form, setForm] = useState({ nombre: "", apellidos: "", cedula: "", fecha_nacimiento: "", colegio: "" });
   const [search, setSearch] = useState("");
+  const [colegioFilter, setColegioFilter] = useState<string>("all");
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["admin-students"],
@@ -283,9 +284,13 @@ export default function AdminEstudiantes() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const filtered = students?.filter(s =>
-    !search || s.nombre.toLowerCase().includes(search.toLowerCase()) || s.cedula.includes(search) || s.apellidos.toLowerCase().includes(search.toLowerCase())
-  );
+  const colegios = [...new Set(students?.map(s => (s as any).colegio).filter(Boolean) || [])].sort();
+
+  const filtered = students?.filter(s => {
+    const matchSearch = !search || s.nombre.toLowerCase().includes(search.toLowerCase()) || s.cedula.includes(search) || s.apellidos.toLowerCase().includes(search.toLowerCase());
+    const matchColegio = colegioFilter === "all" || (s as any).colegio === colegioFilter;
+    return matchSearch && matchColegio;
+  });
 
   const getUserCourses = (userId: string) => inscripciones?.filter(i => i.user_id === userId).map(i => i.curso_id) || [];
 
@@ -316,7 +321,16 @@ export default function AdminEstudiantes() {
         </Dialog>
       </div>
 
-      <Input placeholder="Buscar por nombre o cédula..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input placeholder="Buscar por nombre o cédula..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+        <Select value={colegioFilter} onValueChange={setColegioFilter}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filtrar por colegio" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los colegios</SelectItem>
+            {colegios.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
