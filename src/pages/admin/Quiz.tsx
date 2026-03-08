@@ -55,6 +55,7 @@ export default function AdminQuiz() {
   const [smartTiempo, setSmartTiempo] = useState("60");
   const [form, setForm] = useState({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60", imagen_url: "" });
   const [searchFilter, setSearchFilter] = useState("");
+  const [tiempoFilter, setTiempoFilter] = useState("all");
   const [openAI, setOpenAI] = useState(false);
   const [aiTema, setAiTema] = useState("");
   const [aiContexto, setAiContexto] = useState("");
