@@ -80,7 +80,7 @@ export default function StudentLayout() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/login" replace />;
   if (!profile?.password_changed) return <Navigate to="/login" replace />;
-  if (role === "admin") return <Navigate to="/admin" replace />;
+  // Allow admin to preview student view (don't redirect)
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
