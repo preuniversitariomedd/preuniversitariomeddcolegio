@@ -3,11 +3,12 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
-  LayoutDashboard, Users, BookOpen, FileText, HelpCircle, Library, MessageSquare, LogOut, Moon, Sun, Menu,
+  LayoutDashboard, Users, BookOpen, FileText, HelpCircle, Library, MessageSquare, LogOut, Moon, Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import logoMedd from "@/assets/logo-medd.png";
 
 const adminLinks = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -33,10 +34,11 @@ function AdminSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="flex flex-col h-full">
-        <div className="p-4 border-b border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border flex items-center gap-3">
+          <img src={logoMedd} alt="MEDD" className="w-9 h-9 rounded-full object-cover shrink-0" />
           {!collapsed && (
             <div>
-              <h2 className="font-display font-bold text-primary text-lg">MEDD</h2>
+              <h2 className="font-display font-bold text-primary text-lg leading-tight">MEDD</h2>
               <p className="text-xs text-muted-foreground truncate">{profile?.nombre} {profile?.apellidos}</p>
             </div>
           )}

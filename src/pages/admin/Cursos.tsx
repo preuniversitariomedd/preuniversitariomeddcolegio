@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, ChevronDown, ChevronUp, Lock, Unlock } from "lucide-react";
+import { Loader2, Plus, ChevronDown, ChevronUp, Lock, Unlock, Pencil } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function AdminCursos() {
@@ -20,6 +20,8 @@ export default function AdminCursos() {
   const [sesionForm, setSesionForm] = useState({ titulo: "", curso_id: "", orden: 1 });
   const [openSesion, setOpenSesion] = useState(false);
   const [expandedCurso, setExpandedCurso] = useState<string | null>(null);
+  const [editCursoId, setEditCursoId] = useState<string | null>(null);
+  const [editCursoName, setEditCursoName] = useState("");
 
   const { data: cursos, isLoading } = useQuery({
     queryKey: ["admin-cursos"],
@@ -43,12 +45,23 @@ export default function AdminCursos() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  const updateCursoMutation = useMutation({
+    mutationFn: async () => {
+      if (!editCursoId) return;
+      const { error } = await supabase.from("cursos").update({ titulo: editCursoName }).eq("id", editCursoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Curso actualizado" });
+      setEditCursoId(null);
+      qc.invalidateQueries({ queryKey: ["admin-cursos"] });
+    },
+  });
+
   const createSesionMutation = useMutation({
     mutationFn: async () => {
-      // Create session
       const { data: sesion, error } = await supabase.from("sesiones").insert(sesionForm).select().single();
       if (error) throw error;
-      // Create default tabs
       const defaultTabs = ["Teoría", "Trucos", "Ejercicios", "Quiz"];
       for (let i = 0; i < defaultTabs.length; i++) {
         await supabase.from("pestanas").insert({ sesion_id: sesion.id, nombre: defaultTabs[i], orden: i + 1 });
@@ -101,6 +114,17 @@ export default function AdminCursos() {
         </Dialog>
       </div>
 
+      {/* Edit curso name dialog */}
+      <Dialog open={!!editCursoId} onOpenChange={v => { if (!v) setEditCursoId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar nombre del curso</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <Input value={editCursoName} onChange={e => setEditCursoName(e.target.value)} />
+            <Button variant="neon" className="w-full" onClick={() => updateCursoMutation.mutate()}>Guardar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="space-y-4">
         {cursos?.map(curso => (
           <Card key={curso.id} className="border-l-4" style={{ borderLeftColor: curso.color || "#8B5CF6" }}>
@@ -111,7 +135,12 @@ export default function AdminCursos() {
                     {expandedCurso === curso.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </CollapsibleTrigger>
                   <div>
-                    <CardTitle className="text-lg">{curso.titulo}</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {curso.titulo}
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditCursoId(curso.id); setEditCursoName(curso.titulo); }}>
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground">{(curso.sesiones as any[])?.length || 0} sesiones</p>
                   </div>
                 </div>
