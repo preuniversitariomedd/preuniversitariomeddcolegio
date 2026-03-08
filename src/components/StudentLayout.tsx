@@ -1,6 +1,6 @@
 import { useAuth } from "@/components/AuthProvider";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon, Sun } from "lucide-react";
+import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon, Sun, Zap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import logoMedd from "@/assets/logo-medd.png";
 const studentLinks = [
   { title: "Inicio", url: "/student", icon: LayoutDashboard },
   { title: "Cursos", url: "/student/cursos", icon: BookOpen },
+  { title: "Competencia", url: "/student/competencia", icon: Zap },
   { title: "Biblioteca", url: "/student/biblioteca", icon: Library },
   { title: "Mensajes", url: "/student/mensajes", icon: MessageSquare },
   { title: "Perfil", url: "/student/perfil", icon: User },

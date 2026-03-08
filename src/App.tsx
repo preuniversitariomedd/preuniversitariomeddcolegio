@@ -14,12 +14,14 @@ const AdminEstudiantes = lazy(() => import("./pages/admin/Estudiantes"));
 const AdminCursos = lazy(() => import("./pages/admin/Cursos"));
 const AdminContenido = lazy(() => import("./pages/admin/Contenido"));
 const AdminQuiz = lazy(() => import("./pages/admin/Quiz"));
+const AdminCompetencia = lazy(() => import("./pages/admin/Competencia"));
 const AdminBiblioteca = lazy(() => import("./pages/admin/Biblioteca"));
 const AdminMensajes = lazy(() => import("./pages/admin/Mensajes"));
 const StudentLayout = lazy(() => import("./components/StudentLayout"));
 const StudentDashboard = lazy(() => import("./pages/student/Dashboard"));
 const StudentCursos = lazy(() => import("./pages/student/Cursos"));
 const StudentSesion = lazy(() => import("./pages/student/Sesion"));
+const StudentCompetencia = lazy(() => import("./pages/student/Competencia"));
 const StudentBiblioteca = lazy(() => import("./pages/student/Biblioteca"));
 const StudentMensajes = lazy(() => import("./pages/student/Mensajes"));
 const StudentPerfil = lazy(() => import("./pages/student/Perfil"));
@@ -64,6 +66,7 @@ const App = () => (
                 <Route path="cursos" element={<AdminCursos />} />
                 <Route path="contenido" element={<AdminContenido />} />
                 <Route path="quiz" element={<AdminQuiz />} />
+                <Route path="competencia" element={<AdminCompetencia />} />
                 <Route path="biblioteca" element={<AdminBiblioteca />} />
                 <Route path="mensajes" element={<AdminMensajes />} />
               </Route>
@@ -71,6 +74,7 @@ const App = () => (
                 <Route index element={<StudentDashboard />} />
                 <Route path="cursos" element={<StudentCursos />} />
                 <Route path="sesion/:id" element={<StudentSesion />} />
+                <Route path="competencia" element={<StudentCompetencia />} />
                 <Route path="biblioteca" element={<StudentBiblioteca />} />
                 <Route path="mensajes" element={<StudentMensajes />} />
                 <Route path="perfil" element={<StudentPerfil />} />
