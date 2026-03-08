@@ -128,6 +128,12 @@ export default function StudentCompetencia() {
           case "50_50": apply5050(); toast({ title: "✂️ ¡50/50 activado!" }); break;
           case "x2": setMultiplier(2); toast({ title: "✨ ¡x2 Puntos!" }); break;
           case "x5_penalty": setPenaltyX5(true); toast({ title: "💀 ¡x5 Penalización activa!", variant: "destructive" }); break;
+          case "skip":
+            if (target === user?.id) {
+              toast({ title: "⏭️ ¡El admin te ha pasado la pregunta!", description: "Recibes 50 puntos de regalo" });
+              submitAnswer(-2); // special skip code
+            }
+            break;
         }
       })
       .on("broadcast", { event: "state_change" }, ({ payload }) => {
@@ -195,17 +201,20 @@ export default function StudentCompetencia() {
     clearInterval(timerRef.current);
 
     const tiempoUsado = Math.round((Date.now() - startTimeRef.current) / 1000);
-    const correcta = answerIdx === currentQ.respuesta_correcta;
+    const isSkip = answerIdx === -2;
+    const correcta = !isSkip && answerIdx === currentQ.respuesta_correcta;
 
     let puntos = 0;
-    if (correcta) {
+    if (isSkip) {
+      puntos = 50; // gift points for being skipped
+    } else if (correcta) {
       const timeBonus = Math.max(0, currentQ.tiempo_limite - tiempoUsado);
       puntos = Math.round((100 + timeBonus * 5) * multiplier);
     } else if (penaltyX5) {
       puntos = -500;
     }
 
-    setShowResult({ correct: correcta, points: puntos });
+    setShowResult({ correct: isSkip || correcta, points: puntos });
 
     await supabase.from("competencia_respuestas").insert({
       competencia_id: comp.id,
