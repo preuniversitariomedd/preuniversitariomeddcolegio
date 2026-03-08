@@ -6,78 +6,84 @@
 
 @layer base {
   :root {
-    --background: 0 0% 97%;
+    --background: 250 20% 97%;
     --foreground: 240 10% 10%;
-    --card: 0 0% 100%;
+    --card: 250 15% 100%;
     --card-foreground: 240 10% 10%;
-    --popover: 0 0% 100%;
+    --popover: 250 15% 100%;
     --popover-foreground: 240 10% 10%;
-    --primary: 263 70% 66%;
+    --primary: 263 70% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217 91% 60%;
+    --secondary: 217 91% 58%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 240 5% 92%;
+    --muted: 250 10% 92%;
     --muted-foreground: 240 5% 46%;
-    --accent: 160 51% 55%;
+    --accent: 160 60% 48%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 263 70% 66%;
+    --border: 250 10% 88%;
+    --input: 250 10% 88%;
+    --ring: 263 70% 60%;
     --radius: 0.75rem;
 
-    --success: 160 51% 55%;
+    --success: 160 60% 48%;
     --progress: 25 95% 53%;
-    --pink: 330 81% 60%;
-    --neon-violet: 263 100% 75%;
-    --neon-blue: 217 100% 70%;
+    --pink: 330 90% 62%;
+    --neon-violet: 263 100% 72%;
+    --neon-blue: 217 100% 68%;
+    --neon-green: 160 100% 50%;
+    --neon-pink: 330 100% 65%;
+    --neon-orange: 25 100% 60%;
 
-    --sidebar-background: 0 0% 100%;
+    --sidebar-background: 250 15% 99%;
     --sidebar-foreground: 240 10% 10%;
-    --sidebar-primary: 263 70% 66%;
+    --sidebar-primary: 263 70% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 263 70% 96%;
+    --sidebar-accent: 263 50% 96%;
     --sidebar-accent-foreground: 263 70% 40%;
-    --sidebar-border: 240 6% 92%;
-    --sidebar-ring: 263 70% 66%;
+    --sidebar-border: 250 10% 92%;
+    --sidebar-ring: 263 70% 60%;
   }
 
   .dark {
-    --background: 240 10% 6%;
-    --foreground: 0 0% 95%;
-    --card: 240 10% 9%;
-    --card-foreground: 0 0% 95%;
-    --popover: 240 10% 9%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 263 70% 66%;
+    --background: 250 15% 5%;
+    --foreground: 250 10% 95%;
+    --card: 250 15% 8%;
+    --card-foreground: 250 10% 95%;
+    --popover: 250 15% 8%;
+    --popover-foreground: 250 10% 95%;
+    --primary: 263 80% 68%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217 91% 60%;
+    --secondary: 217 100% 65%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 240 6% 15%;
-    --muted-foreground: 240 5% 60%;
-    --accent: 160 51% 55%;
+    --muted: 250 10% 14%;
+    --muted-foreground: 250 10% 60%;
+    --accent: 160 70% 50%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62% 50%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 6% 18%;
-    --input: 240 6% 18%;
-    --ring: 263 70% 66%;
+    --border: 250 10% 16%;
+    --input: 250 10% 16%;
+    --ring: 263 80% 68%;
 
-    --success: 160 51% 55%;
-    --progress: 25 95% 53%;
-    --pink: 330 81% 60%;
+    --success: 160 70% 50%;
+    --progress: 25 100% 58%;
+    --pink: 330 90% 65%;
     --neon-violet: 263 100% 75%;
-    --neon-blue: 217 100% 70%;
+    --neon-blue: 217 100% 72%;
+    --neon-green: 160 100% 55%;
+    --neon-pink: 330 100% 68%;
+    --neon-orange: 25 100% 65%;
 
-    --sidebar-background: 240 10% 8%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 263 70% 66%;
+    --sidebar-background: 250 15% 7%;
+    --sidebar-foreground: 250 10% 95%;
+    --sidebar-primary: 263 80% 68%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 263 70% 15%;
+    --sidebar-accent: 263 50% 14%;
     --sidebar-accent-foreground: 263 70% 80%;
-    --sidebar-border: 240 6% 15%;
-    --sidebar-ring: 263 70% 66%;
+    --sidebar-border: 250 10% 14%;
+    --sidebar-ring: 263 80% 68%;
   }
 }
 
@@ -95,10 +101,19 @@
 
 @layer utilities {
   .neon-glow {
-    box-shadow: 0 0 20px hsl(var(--neon-violet) / 0.3), 0 0 40px hsl(var(--neon-violet) / 0.1);
+    box-shadow: 0 0 15px hsl(var(--neon-violet) / 0.35), 0 0 45px hsl(var(--neon-violet) / 0.12);
   }
   .neon-glow-blue {
-    box-shadow: 0 0 20px hsl(var(--neon-blue) / 0.3), 0 0 40px hsl(var(--neon-blue) / 0.1);
+    box-shadow: 0 0 15px hsl(var(--neon-blue) / 0.35), 0 0 45px hsl(var(--neon-blue) / 0.12);
+  }
+  .neon-glow-green {
+    box-shadow: 0 0 15px hsl(var(--neon-green) / 0.35), 0 0 45px hsl(var(--neon-green) / 0.12);
+  }
+  .neon-glow-pink {
+    box-shadow: 0 0 15px hsl(var(--neon-pink) / 0.35), 0 0 45px hsl(var(--neon-pink) / 0.12);
+  }
+  .neon-text {
+    text-shadow: 0 0 10px hsl(var(--neon-violet) / 0.5), 0 0 30px hsl(var(--neon-violet) / 0.2);
   }
   .quiz-no-copy {
     user-select: none;
