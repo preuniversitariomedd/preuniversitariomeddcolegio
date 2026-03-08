@@ -338,6 +338,12 @@ export default function AdminCursos() {
           </Card>
         ))}
       </div>
+
+      <CursoGestionDialog
+        open={!!gestionCurso}
+        onOpenChange={(v) => { if (!v) setGestionCurso(null); }}
+        curso={gestionCurso}
+      />
     </div>
   );
 }
