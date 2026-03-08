@@ -30,6 +30,11 @@ export default function AdminContenido() {
   const [editCursoName, setEditCursoName] = useState("");
   const [contentForm, setContentForm] = useState({ titulo: "", texto: "", solucion: "", video_url: "", imagen_url: "", grupo: "", pestana_id: "", orden: 0 });
 
+  const { handlePaste: handleContentPaste } = useClipboardImage(useCallback((url: string) => {
+    setContentForm(prev => ({ ...prev, imagen_url: url }));
+    toast({ title: "Imagen pegada desde portapapeles" });
+  }, [toast]));
+
   const { data: cursos } = useQuery({
     queryKey: ["cursos-list"],
     queryFn: async () => {
