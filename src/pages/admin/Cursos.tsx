@@ -278,6 +278,9 @@ export default function AdminCursos() {
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditCursoId(curso.id); setEditCursoForm({ titulo: curso.titulo, descripcion: curso.descripcion || "" }); }}>
                         <Pencil className="h-3 w-3" />
                       </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" title="Duplicar curso" onClick={() => { if (confirm("¿Duplicar este curso con todo su contenido (sin inscripciones)?")) duplicateCursoMutation.mutate(curso.id); }}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => { if (confirm("¿Eliminar este curso y todas sus sesiones?")) deleteCursoMutation.mutate(curso.id); }}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
