@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Upload, Wand2 } from "lucide-react";
+import { useClipboardImage } from "@/hooks/useClipboardImage";
+import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste } from "lucide-react";
 
 function parseSmartQuestion(text: string) {
   const lines = text.trim().split("\n").map(l => l.trim()).filter(Boolean);
@@ -49,7 +50,17 @@ export default function AdminQuiz() {
   const [smartCorrecta, setSmartCorrecta] = useState("0");
   const [smartExplicacion, setSmartExplicacion] = useState("");
   const [smartTiempo, setSmartTiempo] = useState("60");
-  const [form, setForm] = useState({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60" });
+  const [form, setForm] = useState({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60", imagen_url: "" });
+  
+  const { handlePaste: handleSmartPaste } = useClipboardImage(useCallback((url: string) => {
+    toast({ title: "Imagen pegada desde portapapeles" });
+    // For smart import — we don't have imagen_url there, so just notify
+  }, [toast]));
+
+  const { handlePaste: handleFormPaste } = useClipboardImage(useCallback((url: string) => {
+    setForm(prev => ({ ...prev, imagen_url: url }));
+    toast({ title: "Imagen pegada desde portapapeles" });
+  }, [toast]));
 
   const { data: sesiones } = useQuery({
     queryKey: ["all-sesiones"],
@@ -84,7 +95,7 @@ export default function AdminQuiz() {
     onSuccess: () => {
       toast({ title: "Pregunta añadida" });
       setOpenAdd(false);
-      setForm({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60" });
+      setForm({ pregunta: "", opcA: "", opcB: "", opcC: "", opcD: "", correcta: "0", explicacion: "", tiempo: "60", imagen_url: "" });
       qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -233,7 +244,7 @@ export default function AdminQuiz() {
               <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" />Manual</Button></DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Nueva Pregunta</DialogTitle></DialogHeader>
-                <form onSubmit={e => { e.preventDefault(); addMutation.mutate(); }} className="space-y-4">
+                <form onSubmit={e => { e.preventDefault(); addMutation.mutate(); }} className="space-y-4" onPaste={handleFormPaste}>
                   <div><Label>Pregunta (Markdown + LaTeX)</Label><Textarea rows={3} value={form.pregunta} onChange={e => setForm({ ...form, pregunta: e.target.value })} required /></div>
                   <div className="grid grid-cols-2 gap-4">
                     <div><Label>A)</Label><Input value={form.opcA} onChange={e => setForm({ ...form, opcA: e.target.value })} required /></div>
@@ -241,6 +252,13 @@ export default function AdminQuiz() {
                     <div><Label>C)</Label><Input value={form.opcC} onChange={e => setForm({ ...form, opcC: e.target.value })} required /></div>
                     <div><Label>D)</Label><Input value={form.opcD} onChange={e => setForm({ ...form, opcD: e.target.value })} required /></div>
                   </div>
+                  {form.imagen_url && (
+                    <div className="relative">
+                      <img src={form.imagen_url} alt="Preview" className="max-h-32 rounded border" />
+                      <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-6 w-6" onClick={() => setForm({ ...form, imagen_url: "" })}>✕</Button>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><ClipboardPaste className="h-3 w-3" /> Pega una imagen (Ctrl+V) para adjuntarla</p>
                   <div className="flex gap-4">
                     <div>
                       <Label>Correcta</Label>
