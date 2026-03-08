@@ -6,19 +6,36 @@ import { Input } from "@/components/ui/input";
 import { ExternalLink, FileText, Video, Link as LinkIcon, Image, File, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useViewAsStudent } from "@/components/StudentLayout";
+import { useAuth } from "@/components/AuthProvider";
 
 const typeIcons: Record<string, any> = { pdf: FileText, video: Video, link: LinkIcon, imagen: Image, documento: File };
 
 export default function StudentBiblioteca() {
   const [search, setSearch] = useState("");
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  const viewAsId = useViewAsStudent();
+  const { profile } = useAuth();
+  const targetId = viewAsId || profile?.id;
+
+  // Get enrolled course IDs for the target student
+  const { data: enrolledCourseIds } = useQuery({
+    queryKey: ["enrolled-courses", targetId],
+    queryFn: async () => {
+      const { data } = await supabase.from("inscripciones").select("curso_id").eq("user_id", targetId!);
+      return data?.map(d => d.curso_id) || [];
+    },
+    enabled: !!targetId,
+  });
 
   const { data: items, isLoading } = useQuery({
-    queryKey: ["student-biblioteca"],
+    queryKey: ["student-biblioteca", targetId],
     queryFn: async () => {
       const { data } = await supabase.from("biblioteca").select("*").order("created_at", { ascending: false });
-      return data || [];
+      // Filter by enrolled courses (items with curso_id matching enrollment, or items without curso_id)
+      return (data || []).filter(item => !item.curso_id || enrolledCourseIds?.includes(item.curso_id));
     },
+    enabled: !!targetId && !!enrolledCourseIds,
   });
 
   const filtered = items?.filter(i =>
