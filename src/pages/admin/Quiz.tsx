@@ -561,12 +561,15 @@ export default function AdminQuiz() {
                     <TableHead className="w-20">Opciones</TableHead>
                     <TableHead className="w-20">Correcta</TableHead>
                     <TableHead className="w-20">Tiempo</TableHead>
+                    <TableHead className="w-32"><BarChart3 className="h-4 w-4 inline mr-1" />Estadísticas</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPreguntas?.map((p, i) => {
                     const opcs = (p.opciones as any[]) || [];
+                    const stat = statsMap?.[p.id];
+                    const pctCorrect = stat && stat.total > 0 ? Math.round((stat.correctas / stat.total) * 100) : null;
                     return (
                       <TableRow key={p.id}>
                         <TableCell>{i + 1}</TableCell>
@@ -574,12 +577,27 @@ export default function AdminQuiz() {
                         <TableCell>{opcs.length}</TableCell>
                         <TableCell><Badge>{letters[p.respuesta_correcta] || "?"}</Badge></TableCell>
                         <TableCell>{p.tiempo_limite}s</TableCell>
+                        <TableCell>
+                          {stat ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className={pctCorrect !== null && pctCorrect < 30 ? "text-destructive font-semibold" : pctCorrect !== null && pctCorrect > 70 ? "text-green-600 dark:text-green-400 font-semibold" : "text-muted-foreground"}>
+                                  {pctCorrect}%
+                                </span>
+                                <span className="text-muted-foreground">({stat.correctas}/{stat.total})</span>
+                              </div>
+                              <Progress value={pctCorrect ?? 0} className="h-1.5" />
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Sin datos</span>
+                          )}
+                        </TableCell>
                         <TableCell><Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteMutation.mutate(p.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>
                       </TableRow>
                     );
                   })}
                   {(!filteredPreguntas || filteredPreguntas.length === 0) && (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       {searchFilter ? "No se encontraron preguntas con ese filtro" : "No hay preguntas en esta sesión"}
                     </TableCell></TableRow>
                   )}
