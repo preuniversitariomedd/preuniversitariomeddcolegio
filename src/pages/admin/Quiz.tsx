@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useClipboardImage } from "@/hooks/useClipboardImage";
-import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy, Sparkles, Search, Download, ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Star } from "lucide-react";
+import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy, Sparkles, Search, Download, ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Star, BarChart3 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { downloadCSV } from "@/lib/exportUtils";
 
 function parseSmartQuestion(text: string) {
