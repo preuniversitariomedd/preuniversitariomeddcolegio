@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useClipboardImage } from "@/hooks/useClipboardImage";
-import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy, Sparkles, Search, Download, ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Star } from "lucide-react";
+import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy, Sparkles, Search, Download, ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Star, BarChart3 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { downloadCSV } from "@/lib/exportUtils";
 
 function parseSmartQuestion(text: string) {
@@ -90,6 +91,23 @@ export default function AdminQuiz() {
       return data || [];
     },
     enabled: !!sesionId,
+  });
+
+  const { data: statsMap } = useQuery({
+    queryKey: ["quiz-stats", sesionId],
+    queryFn: async () => {
+      if (!sesionId || !preguntas?.length) return {};
+      const ids = preguntas.map(p => p.id);
+      const { data } = await supabase.from("quiz_respuestas").select("pregunta_id, correcta").in("pregunta_id", ids);
+      const map: Record<string, { total: number; correctas: number }> = {};
+      data?.forEach(r => {
+        if (!map[r.pregunta_id]) map[r.pregunta_id] = { total: 0, correctas: 0 };
+        map[r.pregunta_id].total++;
+        if (r.correcta) map[r.pregunta_id].correctas++;
+      });
+      return map;
+    },
+    enabled: !!sesionId && !!preguntas?.length,
   });
 
   const addMutation = useMutation({
@@ -543,12 +561,15 @@ export default function AdminQuiz() {
                     <TableHead className="w-20">Opciones</TableHead>
                     <TableHead className="w-20">Correcta</TableHead>
                     <TableHead className="w-20">Tiempo</TableHead>
+                    <TableHead className="w-32"><BarChart3 className="h-4 w-4 inline mr-1" />Estadísticas</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPreguntas?.map((p, i) => {
                     const opcs = (p.opciones as any[]) || [];
+                    const stat = statsMap?.[p.id];
+                    const pctCorrect = stat && stat.total > 0 ? Math.round((stat.correctas / stat.total) * 100) : null;
                     return (
                       <TableRow key={p.id}>
                         <TableCell>{i + 1}</TableCell>
@@ -556,12 +577,27 @@ export default function AdminQuiz() {
                         <TableCell>{opcs.length}</TableCell>
                         <TableCell><Badge>{letters[p.respuesta_correcta] || "?"}</Badge></TableCell>
                         <TableCell>{p.tiempo_limite}s</TableCell>
+                        <TableCell>
+                          {stat ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className={pctCorrect !== null && pctCorrect < 30 ? "text-destructive font-semibold" : pctCorrect !== null && pctCorrect > 70 ? "text-green-600 dark:text-green-400 font-semibold" : "text-muted-foreground"}>
+                                  {pctCorrect}%
+                                </span>
+                                <span className="text-muted-foreground">({stat.correctas}/{stat.total})</span>
+                              </div>
+                              <Progress value={pctCorrect ?? 0} className="h-1.5" />
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Sin datos</span>
+                          )}
+                        </TableCell>
                         <TableCell><Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteMutation.mutate(p.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>
                       </TableRow>
                     );
                   })}
                   {(!filteredPreguntas || filteredPreguntas.length === 0) && (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       {searchFilter ? "No se encontraron preguntas con ese filtro" : "No hay preguntas en esta sesión"}
                     </TableCell></TableRow>
                   )}
