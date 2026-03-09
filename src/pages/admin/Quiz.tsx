@@ -249,6 +249,8 @@ export default function AdminQuiz() {
     }
   };
 
+
+  const handleSmartParse = () => {
     const parsed = parseSmartQuestion(smartText);
     if (!parsed.pregunta || parsed.opciones.length < 2) {
       toast({ title: "No se detectó pregunta/opciones", description: "Asegúrate de que las opciones estén en formato a) b) c) d) e)", variant: "destructive" });
