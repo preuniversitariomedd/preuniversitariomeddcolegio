@@ -93,6 +93,23 @@ export default function AdminQuiz() {
     enabled: !!sesionId,
   });
 
+  const { data: statsMap } = useQuery({
+    queryKey: ["quiz-stats", sesionId],
+    queryFn: async () => {
+      if (!sesionId || !preguntas?.length) return {};
+      const ids = preguntas.map(p => p.id);
+      const { data } = await supabase.from("quiz_respuestas").select("pregunta_id, correcta").in("pregunta_id", ids);
+      const map: Record<string, { total: number; correctas: number }> = {};
+      data?.forEach(r => {
+        if (!map[r.pregunta_id]) map[r.pregunta_id] = { total: 0, correctas: 0 };
+        map[r.pregunta_id].total++;
+        if (r.correcta) map[r.pregunta_id].correctas++;
+      });
+      return map;
+    },
+    enabled: !!sesionId && !!preguntas?.length,
+  });
+
   const addMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("quiz_preguntas").insert({
