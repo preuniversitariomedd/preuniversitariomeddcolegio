@@ -435,6 +435,58 @@ export default function AdminQuiz() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {preguntas && preguntas.length > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => reviewMutation.mutate()}
+                  disabled={reviewMutation.isPending}
+                  className="border-primary/30"
+                >
+                  {reviewMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-1" />Revisando...</> : <><ShieldCheck className="h-4 w-4 mr-1" />Revisar con IA</>}
+                </Button>
+
+                <Dialog open={openReview} onOpenChange={v => { setOpenReview(v); if (!v) setReviewData(null); }}>
+                  <DialogContent className="max-w-3xl max-h-[85vh]">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />Revisión IA del Quiz</DialogTitle>
+                    </DialogHeader>
+                    {reviewData && (
+                      <div className="space-y-4">
+                        <div className="p-3 rounded-lg bg-muted text-sm">
+                          <strong>Resumen:</strong> {reviewData.resumen}
+                        </div>
+                        <ScrollArea className="h-[50vh]">
+                          <div className="space-y-3 pr-4">
+                            {reviewData.revisiones.map((rev, i) => (
+                              <div key={i} className={`p-4 rounded-lg border ${getCalifColor(rev.calificacion)}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {getCalifIcon(rev.calificacion)}
+                                    <span className="font-semibold text-sm">Pregunta {rev.numero}</span>
+                                    <Badge variant="outline" className="capitalize">{rev.calificacion}</Badge>
+                                  </div>
+                                  {!rev.respuesta_correcta_ok && (
+                                    <Badge variant="destructive" className="text-xs">⚠️ Respuesta incorrecta</Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm mb-1">{preguntas?.[rev.numero - 1]?.pregunta?.slice(0, 100)}...</p>
+                                <p className="text-sm opacity-80"><strong>Observaciones:</strong> {rev.observaciones}</p>
+                                {rev.sugerencia && (
+                                  <p className="text-sm mt-1 opacity-80"><strong>Sugerencia:</strong> {rev.sugerencia}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
           </div>
         )}
       </div>
