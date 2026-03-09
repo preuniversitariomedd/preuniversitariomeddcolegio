@@ -212,7 +212,43 @@ export default function AdminQuiz() {
     onError: (e: Error) => toast({ title: "Error IA", description: e.message, variant: "destructive" }),
   });
 
-  const handleSmartParse = () => {
+  const reviewMutation = useMutation({
+    mutationFn: async () => {
+      if (!preguntas?.length) throw new Error("No hay preguntas para revisar");
+      const { data, error } = await supabase.functions.invoke("revisar-quiz-ai", {
+        body: { preguntas: preguntas.map(p => ({ pregunta: p.pregunta, opciones: p.opciones, respuesta_correcta: p.respuesta_correcta, explicacion: p.explicacion })) },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      setReviewData(data);
+      setOpenReview(true);
+    },
+    onError: (e: Error) => toast({ title: "Error revisión IA", description: e.message, variant: "destructive" }),
+  });
+
+  const getCalifIcon = (cal: string) => {
+    switch (cal) {
+      case "excelente": return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      case "buena": return <Star className="h-5 w-5 text-blue-500" />;
+      case "mejorable": return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case "problematica": return <XCircle className="h-5 w-5 text-destructive" />;
+      default: return null;
+    }
+  };
+
+  const getCalifColor = (cal: string) => {
+    switch (cal) {
+      case "excelente": return "bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-400";
+      case "buena": return "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-400";
+      case "mejorable": return "bg-yellow-500/10 border-yellow-500/30 text-yellow-700 dark:text-yellow-400";
+      case "problematica": return "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400";
+      default: return "";
+    }
+  };
+
     const parsed = parseSmartQuestion(smartText);
     if (!parsed.pregunta || parsed.opciones.length < 2) {
       toast({ title: "No se detectó pregunta/opciones", description: "Asegúrate de que las opciones estén en formato a) b) c) d) e)", variant: "destructive" });
