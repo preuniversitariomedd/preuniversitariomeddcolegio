@@ -58,6 +58,8 @@ export default function AdminQuiz() {
   const [searchFilter, setSearchFilter] = useState("");
   const [tiempoFilter, setTiempoFilter] = useState("all");
   const [openAI, setOpenAI] = useState(false);
+  const [openReview, setOpenReview] = useState(false);
+  const [reviewData, setReviewData] = useState<{ revisiones: any[]; resumen: string } | null>(null);
   const [aiTema, setAiTema] = useState("");
   const [aiContexto, setAiContexto] = useState("");
   const [aiCantidad, setAiCantidad] = useState("5");
