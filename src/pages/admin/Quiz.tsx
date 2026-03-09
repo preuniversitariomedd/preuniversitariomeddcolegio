@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useClipboardImage } from "@/hooks/useClipboardImage";
-import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy, Sparkles, Search, Download } from "lucide-react";
+import { Loader2, Plus, Trash2, Upload, Wand2, ClipboardPaste, Copy, Sparkles, Search, Download, ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Star } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { downloadCSV } from "@/lib/exportUtils";
 
 function parseSmartQuestion(text: string) {
@@ -57,6 +58,8 @@ export default function AdminQuiz() {
   const [searchFilter, setSearchFilter] = useState("");
   const [tiempoFilter, setTiempoFilter] = useState("all");
   const [openAI, setOpenAI] = useState(false);
+  const [openReview, setOpenReview] = useState(false);
+  const [reviewData, setReviewData] = useState<{ revisiones: any[]; resumen: string } | null>(null);
   const [aiTema, setAiTema] = useState("");
   const [aiContexto, setAiContexto] = useState("");
   const [aiCantidad, setAiCantidad] = useState("5");
@@ -208,6 +211,44 @@ export default function AdminQuiz() {
     },
     onError: (e: Error) => toast({ title: "Error IA", description: e.message, variant: "destructive" }),
   });
+
+  const reviewMutation = useMutation({
+    mutationFn: async () => {
+      if (!preguntas?.length) throw new Error("No hay preguntas para revisar");
+      const { data, error } = await supabase.functions.invoke("revisar-quiz-ai", {
+        body: { preguntas: preguntas.map(p => ({ pregunta: p.pregunta, opciones: p.opciones, respuesta_correcta: p.respuesta_correcta, explicacion: p.explicacion })) },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      setReviewData(data);
+      setOpenReview(true);
+    },
+    onError: (e: Error) => toast({ title: "Error revisión IA", description: e.message, variant: "destructive" }),
+  });
+
+  const getCalifIcon = (cal: string) => {
+    switch (cal) {
+      case "excelente": return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      case "buena": return <Star className="h-5 w-5 text-blue-500" />;
+      case "mejorable": return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case "problematica": return <XCircle className="h-5 w-5 text-destructive" />;
+      default: return null;
+    }
+  };
+
+  const getCalifColor = (cal: string) => {
+    switch (cal) {
+      case "excelente": return "bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-400";
+      case "buena": return "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-400";
+      case "mejorable": return "bg-yellow-500/10 border-yellow-500/30 text-yellow-700 dark:text-yellow-400";
+      case "problematica": return "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400";
+      default: return "";
+    }
+  };
+
 
   const handleSmartParse = () => {
     const parsed = parseSmartQuestion(smartText);
@@ -394,6 +435,58 @@ export default function AdminQuiz() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {preguntas && preguntas.length > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => reviewMutation.mutate()}
+                  disabled={reviewMutation.isPending}
+                  className="border-primary/30"
+                >
+                  {reviewMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-1" />Revisando...</> : <><ShieldCheck className="h-4 w-4 mr-1" />Revisar con IA</>}
+                </Button>
+
+                <Dialog open={openReview} onOpenChange={v => { setOpenReview(v); if (!v) setReviewData(null); }}>
+                  <DialogContent className="max-w-3xl max-h-[85vh]">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />Revisión IA del Quiz</DialogTitle>
+                    </DialogHeader>
+                    {reviewData && (
+                      <div className="space-y-4">
+                        <div className="p-3 rounded-lg bg-muted text-sm">
+                          <strong>Resumen:</strong> {reviewData.resumen}
+                        </div>
+                        <ScrollArea className="h-[50vh]">
+                          <div className="space-y-3 pr-4">
+                            {reviewData.revisiones.map((rev, i) => (
+                              <div key={i} className={`p-4 rounded-lg border ${getCalifColor(rev.calificacion)}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {getCalifIcon(rev.calificacion)}
+                                    <span className="font-semibold text-sm">Pregunta {rev.numero}</span>
+                                    <Badge variant="outline" className="capitalize">{rev.calificacion}</Badge>
+                                  </div>
+                                  {!rev.respuesta_correcta_ok && (
+                                    <Badge variant="destructive" className="text-xs">⚠️ Respuesta incorrecta</Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm mb-1">{preguntas?.[rev.numero - 1]?.pregunta?.slice(0, 100)}...</p>
+                                <p className="text-sm opacity-80"><strong>Observaciones:</strong> {rev.observaciones}</p>
+                                {rev.sugerencia && (
+                                  <p className="text-sm mt-1 opacity-80"><strong>Sugerencia:</strong> {rev.sugerencia}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
           </div>
         )}
       </div>
