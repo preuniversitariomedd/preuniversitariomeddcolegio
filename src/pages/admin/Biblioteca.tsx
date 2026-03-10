@@ -186,6 +186,45 @@ export default function AdminBiblioteca() {
         ))}
         {Object.keys(grouped).length === 0 && <p className="text-center text-muted-foreground py-8">No hay recursos en la biblioteca.</p>}
       </div>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editItem} onOpenChange={v => { if (!v) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Recurso</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); editMutation.mutate(); }} className="space-y-4">
+            <div><Label>Título</Label><Input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} required /></div>
+            <div><Label>Descripción</Label><Input value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} /></div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <Label>Tipo</Label>
+                <Select value={form.tipo} onValueChange={v => setForm({ ...form, tipo: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pdf">PDF</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="link">Link</SelectItem>
+                    <SelectItem value="imagen">Imagen</SelectItem>
+                    <SelectItem value="documento">Documento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1"><Label>Categoría</Label><Input value={form.categoria} onChange={e => setForm({ ...form, categoria: e.target.value })} /></div>
+            </div>
+            <div><Label>URL</Label><Input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} required /></div>
+            <div>
+              <Label>Curso (opcional)</Label>
+              <Select value={form.curso_id || "none"} onValueChange={v => setForm({ ...form, curso_id: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="Sin curso" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin curso</SelectItem>
+                  {cursos?.map(c => <SelectItem key={c.id} value={c.id}>{c.titulo}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full" variant="neon" disabled={editMutation.isPending}>Guardar cambios</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
