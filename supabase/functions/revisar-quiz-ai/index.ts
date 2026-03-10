@@ -45,17 +45,14 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Eres un revisor experto de preguntas de quiz educativo. Analiza cada pregunta y evalúa:
-1. Claridad: ¿La pregunta está bien redactada y es comprensible?
-2. Correctitud: ¿La respuesta marcada como correcta es realmente correcta?
-3. Opciones: ¿Los distractores son plausibles pero incorrectos? ¿Hay ambigüedades?
-4. Explicación: ¿La explicación es adecuada?
-5. Sugerencias de mejora si aplican.
-Sé conciso y directo.`,
+            content: `Eres un revisor experto de preguntas de quiz educativo. Analiza cada pregunta y:
+1. Evalúa claridad, correctitud de la respuesta, calidad de los distractores y explicación.
+2. Para CADA pregunta, proporciona una versión mejorada/corregida con la pregunta reescrita, opciones mejoradas, la respuesta correcta corregida si es necesario, y una mejor explicación.
+3. Sé conciso y directo. Mejora TODAS las preguntas, incluso las excelentes (puedes hacer mejoras menores de redacción).`,
           },
           {
             role: "user",
-            content: `Revisa las siguientes ${preguntas.length} preguntas de quiz:\n\n${preguntasTexto}`,
+            content: `Revisa y mejora las siguientes ${preguntas.length} preguntas de quiz:\n\n${preguntasTexto}`,
           },
         ],
         tools: [
@@ -63,7 +60,7 @@ Sé conciso y directo.`,
             type: "function",
             function: {
               name: "revision_quiz",
-              description: "Devuelve la revisión detallada de cada pregunta del quiz",
+              description: "Devuelve la revisión y corrección de cada pregunta del quiz",
               parameters: {
                 type: "object",
                 properties: {
@@ -76,9 +73,21 @@ Sé conciso y directo.`,
                         calificacion: { type: "string", enum: ["excelente", "buena", "mejorable", "problematica"], description: "Calificación general" },
                         respuesta_correcta_ok: { type: "boolean", description: "Si la respuesta marcada como correcta es efectivamente correcta" },
                         observaciones: { type: "string", description: "Comentarios sobre claridad, redacción, opciones" },
-                        sugerencia: { type: "string", description: "Sugerencia concreta de mejora, o vacío si no aplica" },
+                        sugerencia: { type: "string", description: "Sugerencia concreta de mejora" },
+                        correccion: {
+                          type: "object",
+                          description: "Versión corregida/mejorada de la pregunta",
+                          properties: {
+                            pregunta: { type: "string", description: "Pregunta mejorada" },
+                            opciones: { type: "array", items: { type: "string" }, description: "Opciones mejoradas" },
+                            respuesta_correcta: { type: "integer", description: "Índice de la respuesta correcta (0-indexed)" },
+                            explicacion: { type: "string", description: "Explicación mejorada" },
+                          },
+                          required: ["pregunta", "opciones", "respuesta_correcta", "explicacion"],
+                          additionalProperties: false,
+                        },
                       },
-                      required: ["numero", "calificacion", "respuesta_correcta_ok", "observaciones", "sugerencia"],
+                      required: ["numero", "calificacion", "respuesta_correcta_ok", "observaciones", "sugerencia", "correccion"],
                       additionalProperties: false,
                     },
                   },
