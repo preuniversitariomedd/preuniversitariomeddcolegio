@@ -240,7 +240,10 @@ export default function AdminMensajes() {
                     <Checkbox checked={selectedMsgs.has(m.id)} onCheckedChange={() => toggleSelect(m.id)} className="mt-3" />
                   )}
                   <div className={`max-w-[70%] p-3 rounded-lg text-sm ${m.remitente_id === user?.id ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                    <p className="text-xs opacity-70 mb-1">{(m.remitente as any)?.nombre} → {(m.destinatario as any)?.nombre}</p>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-xs opacity-70">{(m.remitente as any)?.nombre} → {(m.destinatario as any)?.nombre}</p>
+                      <p className="text-[10px] opacity-50">{m.created_at ? new Date(m.created_at).toLocaleString("es-EC", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}</p>
+                    </div>
                     <p>{m.contenido}</p>
                     {m.archivo_url && (
                       <div className="mt-2">
