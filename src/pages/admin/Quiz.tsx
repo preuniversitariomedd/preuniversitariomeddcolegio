@@ -247,6 +247,49 @@ export default function AdminQuiz() {
     onError: (e: Error) => toast({ title: "Error revisión IA", description: e.message, variant: "destructive" }),
   });
 
+  const applyCorrection = async (questionIndex: number, correccion: any) => {
+    const pregunta = preguntas?.[questionIndex];
+    if (!pregunta || !correccion) return;
+    const { error } = await supabase.from("quiz_preguntas").update({
+      pregunta: correccion.pregunta,
+      opciones: correccion.opciones,
+      respuesta_correcta: correccion.respuesta_correcta,
+      explicacion: correccion.explicacion,
+    }).eq("id", pregunta.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Pregunta ${questionIndex + 1} corregida` });
+      qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
+      // Mark as applied in review data
+      if (reviewData) {
+        const updated = { ...reviewData, revisiones: reviewData.revisiones.map((r: any, i: number) => i === questionIndex ? { ...r, _applied: true } : r) };
+        setReviewData(updated);
+      }
+    }
+  };
+
+  const applyAllCorrections = async () => {
+    if (!preguntas?.length || !reviewData?.revisiones) return;
+    let count = 0;
+    for (const rev of reviewData.revisiones) {
+      if (rev._applied || !rev.correccion) continue;
+      const pregunta = preguntas[rev.numero - 1];
+      if (!pregunta) continue;
+      const { error } = await supabase.from("quiz_preguntas").update({
+        pregunta: rev.correccion.pregunta,
+        opciones: rev.correccion.opciones,
+        respuesta_correcta: rev.correccion.respuesta_correcta,
+        explicacion: rev.correccion.explicacion,
+      }).eq("id", pregunta.id);
+      if (!error) count++;
+    }
+    toast({ title: `${count} preguntas corregidas` });
+    qc.invalidateQueries({ queryKey: ["quiz-preguntas", sesionId] });
+    setOpenReview(false);
+    setReviewData(null);
+  };
+
   const getCalifIcon = (cal: string) => {
     switch (cal) {
       case "excelente": return <CheckCircle2 className="h-5 w-5 text-green-500" />;
