@@ -60,6 +60,32 @@ export default function AdminBiblioteca() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-biblioteca"] }),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editItem) return;
+      const { error } = await supabase.from("biblioteca").update({
+        titulo: form.titulo,
+        descripcion: form.descripcion || null,
+        tipo: form.tipo,
+        url: form.url,
+        categoria: form.categoria || null,
+        curso_id: form.curso_id || null,
+      }).eq("id", editItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Recurso actualizado" });
+      setEditItem(null);
+      qc.invalidateQueries({ queryKey: ["admin-biblioteca"] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const openEdit = (item: any) => {
+    setForm({ titulo: item.titulo, descripcion: item.descripcion || "", tipo: item.tipo, url: item.url, categoria: item.categoria || "", curso_id: item.curso_id || "" });
+    setEditItem(item);
+  };
+
   const tipoBadgeColor: Record<string, string> = { pdf: "bg-destructive/20 text-destructive", video: "bg-secondary/20 text-secondary", link: "bg-primary/20 text-primary", imagen: "bg-success/20 text-success", documento: "bg-progress/20 text-progress" };
 
   // Group by category
