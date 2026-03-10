@@ -16,6 +16,7 @@ export default function AdminBiblioteca() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ titulo: "", descripcion: "", tipo: "pdf" as string, url: "", categoria: "", curso_id: "" });
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
 
