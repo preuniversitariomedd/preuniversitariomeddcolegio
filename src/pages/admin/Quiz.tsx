@@ -516,27 +516,53 @@ export default function AdminQuiz() {
                     </DialogHeader>
                     {reviewData && (
                       <div className="space-y-4">
-                        <div className="p-3 rounded-lg bg-muted text-sm">
-                          <strong>Resumen:</strong> {reviewData.resumen}
+                        <div className="p-3 rounded-lg bg-muted text-sm flex items-center justify-between">
+                          <div><strong>Resumen:</strong> {reviewData.resumen}</div>
+                          <Button variant="neon" size="sm" onClick={applyAllCorrections}>
+                            <CheckCircle2 className="h-4 w-4 mr-1" />Aplicar todas las correcciones
+                          </Button>
                         </div>
-                        <ScrollArea className="h-[50vh]">
+                        <ScrollArea className="h-[55vh]">
                           <div className="space-y-3 pr-4">
-                            {reviewData.revisiones.map((rev, i) => (
-                              <div key={i} className={`p-4 rounded-lg border ${getCalifColor(rev.calificacion)}`}>
+                            {reviewData.revisiones.map((rev: any, i: number) => (
+                              <div key={i} className={`p-4 rounded-lg border ${rev._applied ? "bg-green-500/10 border-green-500/30" : getCalifColor(rev.calificacion)}`}>
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center gap-2">
                                     {getCalifIcon(rev.calificacion)}
                                     <span className="font-semibold text-sm">Pregunta {rev.numero}</span>
                                     <Badge variant="outline" className="capitalize">{rev.calificacion}</Badge>
                                   </div>
-                                  {!rev.respuesta_correcta_ok && (
-                                    <Badge variant="destructive" className="text-xs">⚠️ Respuesta incorrecta</Badge>
-                                  )}
+                                  <div className="flex items-center gap-2">
+                                    {!rev.respuesta_correcta_ok && (
+                                      <Badge variant="destructive" className="text-xs">⚠️ Respuesta incorrecta</Badge>
+                                    )}
+                                    {rev._applied ? (
+                                      <Badge className="bg-green-600 text-white text-xs">✅ Aplicada</Badge>
+                                    ) : rev.correccion && (
+                                      <Button variant="outline" size="sm" onClick={() => applyCorrection(rev.numero - 1, rev.correccion)}>
+                                        Aplicar corrección
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
-                                <p className="text-sm mb-1">{preguntas?.[rev.numero - 1]?.pregunta?.slice(0, 100)}...</p>
+                                <p className="text-sm mb-1"><strong>Original:</strong> {preguntas?.[rev.numero - 1]?.pregunta?.slice(0, 120)}...</p>
                                 <p className="text-sm opacity-80"><strong>Observaciones:</strong> {rev.observaciones}</p>
                                 {rev.sugerencia && (
                                   <p className="text-sm mt-1 opacity-80"><strong>Sugerencia:</strong> {rev.sugerencia}</p>
+                                )}
+                                {rev.correccion && !rev._applied && (
+                                  <div className="mt-3 p-3 rounded bg-background/50 border border-dashed space-y-1">
+                                    <p className="text-xs font-semibold text-primary">Versión corregida:</p>
+                                    <p className="text-sm">{rev.correccion.pregunta}</p>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {rev.correccion.opciones?.map((o: string, j: number) => (
+                                        <Badge key={j} variant={j === rev.correccion.respuesta_correcta ? "default" : "outline"} className="text-xs">
+                                          {letters[j]}) {o}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                    {rev.correccion.explicacion && <p className="text-xs mt-1 text-muted-foreground">{rev.correccion.explicacion}</p>}
+                                  </div>
                                 )}
                               </div>
                             ))}
