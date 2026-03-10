@@ -174,6 +174,7 @@ export default function AdminBiblioteca() {
                       </div>
                       <div className="flex gap-1 shrink-0">
                         <Button variant="ghost" size="icon" className="h-7 w-7" asChild><a href={item.url} target="_blank" rel="noreferrer"><ExternalLink className="h-3 w-3" /></a></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(item)}><Pencil className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(item.id)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </div>
