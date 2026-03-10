@@ -97,8 +97,9 @@ export default function StudentMensajes() {
             <div className="space-y-3">
               {messages?.map(m => (
                 <div key={m.id} className={`flex ${m.remitente_id === targetId ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.remitente_id === targetId ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                   <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.remitente_id === targetId ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                     <p>{m.contenido}</p>
+                    <p className="text-[10px] opacity-50 mt-1 text-right">{m.created_at ? new Date(m.created_at).toLocaleString("es-EC", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}</p>
                     {m.archivo_url && (
                       <div className="mt-2">
                         {isImage(m.archivo_nombre || "") ? (

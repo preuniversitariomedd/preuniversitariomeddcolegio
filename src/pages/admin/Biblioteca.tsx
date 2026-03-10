@@ -9,13 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Plus, Trash2, ExternalLink, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function AdminBiblioteca() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ titulo: "", descripcion: "", tipo: "pdf" as string, url: "", categoria: "", curso_id: "" });
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
 
@@ -58,6 +59,32 @@ export default function AdminBiblioteca() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-biblioteca"] }),
   });
+
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editItem) return;
+      const { error } = await supabase.from("biblioteca").update({
+        titulo: form.titulo,
+        descripcion: form.descripcion || null,
+        tipo: form.tipo,
+        url: form.url,
+        categoria: form.categoria || null,
+        curso_id: form.curso_id || null,
+      }).eq("id", editItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Recurso actualizado" });
+      setEditItem(null);
+      qc.invalidateQueries({ queryKey: ["admin-biblioteca"] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const openEdit = (item: any) => {
+    setForm({ titulo: item.titulo, descripcion: item.descripcion || "", tipo: item.tipo, url: item.url, categoria: item.categoria || "", curso_id: item.curso_id || "" });
+    setEditItem(item);
+  };
 
   const tipoBadgeColor: Record<string, string> = { pdf: "bg-destructive/20 text-destructive", video: "bg-secondary/20 text-secondary", link: "bg-primary/20 text-primary", imagen: "bg-success/20 text-success", documento: "bg-progress/20 text-progress" };
 
@@ -147,6 +174,7 @@ export default function AdminBiblioteca() {
                       </div>
                       <div className="flex gap-1 shrink-0">
                         <Button variant="ghost" size="icon" className="h-7 w-7" asChild><a href={item.url} target="_blank" rel="noreferrer"><ExternalLink className="h-3 w-3" /></a></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(item)}><Pencil className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(item.id)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </div>
@@ -158,6 +186,45 @@ export default function AdminBiblioteca() {
         ))}
         {Object.keys(grouped).length === 0 && <p className="text-center text-muted-foreground py-8">No hay recursos en la biblioteca.</p>}
       </div>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editItem} onOpenChange={v => { if (!v) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Recurso</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); editMutation.mutate(); }} className="space-y-4">
+            <div><Label>Título</Label><Input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} required /></div>
+            <div><Label>Descripción</Label><Input value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} /></div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <Label>Tipo</Label>
+                <Select value={form.tipo} onValueChange={v => setForm({ ...form, tipo: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pdf">PDF</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="link">Link</SelectItem>
+                    <SelectItem value="imagen">Imagen</SelectItem>
+                    <SelectItem value="documento">Documento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1"><Label>Categoría</Label><Input value={form.categoria} onChange={e => setForm({ ...form, categoria: e.target.value })} /></div>
+            </div>
+            <div><Label>URL</Label><Input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} required /></div>
+            <div>
+              <Label>Curso (opcional)</Label>
+              <Select value={form.curso_id || "none"} onValueChange={v => setForm({ ...form, curso_id: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="Sin curso" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin curso</SelectItem>
+                  {cursos?.map(c => <SelectItem key={c.id} value={c.id}>{c.titulo}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full" variant="neon" disabled={editMutation.isPending}>Guardar cambios</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

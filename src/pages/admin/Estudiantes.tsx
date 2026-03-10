@@ -381,7 +381,7 @@ export default function AdminEstudiantes() {
                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{s.created_at ? new Date(s.created_at).toLocaleDateString("es-EC") : "—"}</TableCell>
                         <TableCell>
                           {role?.id ? (
-                            <Select defaultValue={role.rol} onValueChange={v => updateRoleMutation.mutate({ roleId: role.id, rol: v })}>
+                            <Select value={role.rol || "estudiante"} onValueChange={v => updateRoleMutation.mutate({ roleId: role.id, rol: v })}>
                               <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="admin">Admin</SelectItem>
