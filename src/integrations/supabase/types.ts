@@ -686,6 +686,85 @@ export type Database = {
           },
         ]
       }
+      resultados_ejercicios_concentracion: {
+        Row: {
+          completado: boolean
+          ejercicio_id: string
+          fecha: string
+          id: string
+          metricas: Json
+          user_id: string
+        }
+        Insert: {
+          completado?: boolean
+          ejercicio_id: string
+          fecha?: string
+          id?: string
+          metricas?: Json
+          user_id: string
+        }
+        Update: {
+          completado?: boolean
+          ejercicio_id?: string
+          fecha?: string
+          id?: string
+          metricas?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resultados_ejercicios_concentracion_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resultados_tests: {
+        Row: {
+          completado: boolean
+          fecha: string
+          id: string
+          interpretacion: string | null
+          puntaje_por_subescala: Json | null
+          puntaje_total: number | null
+          test_id: string
+          tiempo_real_segundos: number | null
+          user_id: string
+        }
+        Insert: {
+          completado?: boolean
+          fecha?: string
+          id?: string
+          interpretacion?: string | null
+          puntaje_por_subescala?: Json | null
+          puntaje_total?: number | null
+          test_id: string
+          tiempo_real_segundos?: number | null
+          user_id: string
+        }
+        Update: {
+          completado?: boolean
+          fecha?: string
+          id?: string
+          interpretacion?: string | null
+          puntaje_por_subescala?: Json | null
+          puntaje_total?: number | null
+          test_id?: string
+          tiempo_real_segundos?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resultados_tests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sesiones: {
         Row: {
           curso_id: string

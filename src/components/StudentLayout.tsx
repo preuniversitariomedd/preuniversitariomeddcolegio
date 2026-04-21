@@ -1,6 +1,6 @@
 import { useAuth } from "@/components/AuthProvider";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon, Sun, Zap, ShieldCheck } from "lucide-react";
+import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon, Sun, Zap, ShieldCheck, Brain, Target } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,8 @@ const studentLinks = [
   { title: "Cursos", url: "/student/cursos", icon: BookOpen },
   { title: "Competencia", url: "/student/competencia", icon: Zap },
   { title: "Biblioteca", url: "/student/biblioteca", icon: Library },
+  { title: "Psicometría", url: "/student/psicometria", icon: Brain },
+  { title: "Concentración", url: "/student/concentracion", icon: Target },
   { title: "Mensajes", url: "/student/mensajes", icon: MessageSquare },
   { title: "Perfil", url: "/student/perfil", icon: User },
 ];
