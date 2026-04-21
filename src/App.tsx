@@ -19,7 +19,11 @@ const AdminCompetencia = lazy(() => import("./pages/admin/Competencia"));
 const AdminBiblioteca = lazy(() => import("./pages/admin/Biblioteca"));
 const AdminMensajes = lazy(() => import("./pages/admin/Mensajes"));
 const AdminPerfil = lazy(() => import("./pages/admin/Perfil"));
+const AdminPsicometria = lazy(() => import("./pages/admin/Psicometria"));
 const StudentLayout = lazy(() => import("./components/StudentLayout"));
+const StudentPsicometria = lazy(() => import("./pages/student/Psicometria"));
+const StudentPsicometriaTest = lazy(() => import("./pages/student/PsicometriaTest"));
+const StudentConcentracion = lazy(() => import("./pages/student/Concentracion"));
 const StudentDashboard = lazy(() => import("./pages/student/Dashboard"));
 const StudentCursos = lazy(() => import("./pages/student/Cursos"));
 const StudentSesion = lazy(() => import("./pages/student/Sesion"));
@@ -73,6 +77,7 @@ const App = () => (
                 <Route path="biblioteca" element={<AdminBiblioteca />} />
                 <Route path="mensajes" element={<AdminMensajes />} />
                 <Route path="perfil" element={<AdminPerfil />} />
+                <Route path="psicometria" element={<AdminPsicometria />} />
               </Route>
               <Route path="/student" element={<StudentLayout />}>
                 <Route index element={<StudentDashboard />} />
@@ -82,6 +87,9 @@ const App = () => (
                 <Route path="biblioteca" element={<StudentBiblioteca />} />
                 <Route path="mensajes" element={<StudentMensajes />} />
                 <Route path="perfil" element={<StudentPerfil />} />
+                <Route path="psicometria" element={<StudentPsicometria />} />
+                <Route path="psicometria/:testId" element={<StudentPsicometriaTest />} />
+                <Route path="concentracion" element={<StudentConcentracion />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
