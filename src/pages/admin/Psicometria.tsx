@@ -1,15 +1,42 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Target, BarChart3 } from "lucide-react";
+import { Brain, Target, BarChart3, Filter } from "lucide-react";
 import { TESTS, EJERCICIOS_CONCENTRACION, getTestById, getEjercicioById } from "@/data/testdata";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 export default function AdminPsicometria() {
+  // ----- Filtros -----
+  const [desde, setDesde] = useState<string>("");
+  const [hasta, setHasta] = useState<string>("");
+  const [cursoId, setCursoId] = useState<string>("all");
+
+  const { data: cursos } = useQuery({
+    queryKey: ["admin-cursos-min"],
+    queryFn: async () => {
+      const { data } = await supabase.from("cursos").select("id, titulo").order("orden");
+      return data || [];
+    },
+  });
+
+  // user_ids inscritos al curso seleccionado (para filtro)
+  const { data: usuariosCurso } = useQuery({
+    queryKey: ["admin-usuarios-curso", cursoId],
+    enabled: cursoId !== "all",
+    queryFn: async () => {
+      const { data } = await supabase.from("inscripciones").select("user_id").eq("curso_id", cursoId);
+      return (data || []).map((r: any) => r.user_id) as string[];
+    },
+  });
+
   const { data: resultadosTests } = useQuery({
     queryKey: ["admin-resultados-tests"],
     queryFn: async () => {
@@ -17,7 +44,7 @@ export default function AdminPsicometria() {
         .from("resultados_tests")
         .select("*, profiles!inner(nombre, apellidos, cedula)")
         .order("fecha", { ascending: false })
-        .limit(200);
+        .limit(500);
       return data || [];
     },
   });
@@ -29,15 +56,37 @@ export default function AdminPsicometria() {
         .from("resultados_ejercicios_concentracion")
         .select("*, profiles!inner(nombre, apellidos, cedula)")
         .order("fecha", { ascending: false })
-        .limit(200);
+        .limit(500);
       return data || [];
     },
   });
 
+  const aplicaFiltro = (r: any) => {
+    if (desde && new Date(r.fecha) < new Date(desde)) return false;
+    if (hasta) {
+      const h = new Date(hasta);
+      h.setHours(23, 59, 59, 999);
+      if (new Date(r.fecha) > h) return false;
+    }
+    if (cursoId !== "all") {
+      if (!usuariosCurso || !usuariosCurso.includes(r.user_id)) return false;
+    }
+    return true;
+  };
+
+  const testsFiltrados = useMemo(
+    () => (resultadosTests || []).filter(aplicaFiltro),
+    [resultadosTests, desde, hasta, cursoId, usuariosCurso]
+  );
+
+  const ejerciciosFiltrados = useMemo(
+    () => (resultadosEjercicios || []).filter(aplicaFiltro),
+    [resultadosEjercicios, desde, hasta, cursoId, usuariosCurso]
+  );
+
   const distribucion = useMemo(() => {
-    if (!resultadosTests) return [];
     const map = new Map<string, { test: string; bajo: number; medio: number; alto: number; total: number }>();
-    for (const r of resultadosTests as any[]) {
+    for (const r of testsFiltrados as any[]) {
       const nombre = getTestById(r.test_id)?.nombre || r.test_id;
       const cur = map.get(r.test_id) || { test: nombre, bajo: 0, medio: 0, alto: 0, total: 0 };
       const nivel = (r.interpretacion || "").toString().toLowerCase();
@@ -48,7 +97,7 @@ export default function AdminPsicometria() {
       map.set(r.test_id, cur);
     }
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
-  }, [resultadosTests]);
+  }, [testsFiltrados]);
 
   const totalesGlobales = useMemo(() => {
     const acc = { bajo: 0, medio: 0, alto: 0 };
@@ -60,6 +109,9 @@ export default function AdminPsicometria() {
     ];
   }, [distribucion]);
 
+  const limpiarFiltros = () => { setDesde(""); setHasta(""); setCursoId("all"); };
+  const filtrosActivos = !!desde || !!hasta || cursoId !== "all";
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -68,6 +120,45 @@ export default function AdminPsicometria() {
           Catálogo de instrumentos disponibles y resultados de los estudiantes.
         </p>
       </header>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filtros</span>
+            {filtrosActivos && (
+              <Button variant="ghost" size="sm" onClick={limpiarFiltros} className="ml-auto h-7 text-xs">
+                Limpiar
+              </Button>
+            )}
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-1">
+              <Label htmlFor="f-desde" className="text-xs">Desde</Label>
+              <Input id="f-desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="f-hasta" className="text-xs">Hasta</Label>
+              <Input id="f-hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Curso</Label>
+              <Select value={cursoId} onValueChange={setCursoId}>
+                <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los cursos</SelectItem>
+                  {cursos?.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.titulo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            {testsFiltrados.length} resultados de tests · {ejerciciosFiltrados.length} resultados de ejercicios
+          </p>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="catalogo">
         <TabsList>
@@ -84,7 +175,7 @@ export default function AdminPsicometria() {
             </CardHeader>
             <CardContent>
               {distribucion.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8 text-sm">Aún no hay resultados para graficar.</p>
+                <p className="text-center text-muted-foreground py-8 text-sm">Sin resultados con los filtros actuales.</p>
               ) : (
                 <ResponsiveContainer width="100%" height={Math.max(280, distribucion.length * 56)}>
                   <BarChart data={distribucion} layout="vertical" margin={{ left: 24, right: 16, top: 8, bottom: 8 }}>
@@ -214,7 +305,7 @@ export default function AdminPsicometria() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {resultadosTests?.map((r: any) => (
+                  {testsFiltrados.map((r: any) => (
                     <TableRow key={r.id}>
                       <TableCell>{r.profiles?.apellidos}, {r.profiles?.nombre}</TableCell>
                       <TableCell>{getTestById(r.test_id)?.nombre || r.test_id}</TableCell>
@@ -223,8 +314,8 @@ export default function AdminPsicometria() {
                       <TableCell><Badge variant="outline">{r.interpretacion}</Badge></TableCell>
                     </TableRow>
                   ))}
-                  {!resultadosTests?.length && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Sin resultados aún</TableCell></TableRow>
+                  {!testsFiltrados.length && (
+                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Sin resultados</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -245,7 +336,7 @@ export default function AdminPsicometria() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {resultadosEjercicios?.map((r: any) => (
+                  {ejerciciosFiltrados.map((r: any) => (
                     <TableRow key={r.id}>
                       <TableCell>{r.profiles?.apellidos}, {r.profiles?.nombre}</TableCell>
                       <TableCell>{getEjercicioById(r.ejercicio_id)?.nombre || r.ejercicio_id}</TableCell>
@@ -253,8 +344,8 @@ export default function AdminPsicometria() {
                       <TableCell className="font-mono text-xs max-w-md truncate">{JSON.stringify(r.metricas)}</TableCell>
                     </TableRow>
                   ))}
-                  {!resultadosEjercicios?.length && (
-                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Sin resultados aún</TableCell></TableRow>
+                  {!ejerciciosFiltrados.length && (
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Sin resultados</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
