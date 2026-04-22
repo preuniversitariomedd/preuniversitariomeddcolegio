@@ -5,9 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Loader2 } from "lucide-react";
 
 const Login = lazy(() => import("./pages/Login"));
+const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminEstudiantes = lazy(() => import("./pages/admin/Estudiantes"));
@@ -24,6 +26,7 @@ const StudentLayout = lazy(() => import("./components/StudentLayout"));
 const StudentPsicometria = lazy(() => import("./pages/student/Psicometria"));
 const StudentPsicometriaTest = lazy(() => import("./pages/student/PsicometriaTest"));
 const StudentConcentracion = lazy(() => import("./pages/student/Concentracion"));
+const StudentStroop = lazy(() => import("./pages/student/concentracion/StroopExercise"));
 const StudentDashboard = lazy(() => import("./pages/student/Dashboard"));
 const StudentCursos = lazy(() => import("./pages/student/Cursos"));
 const StudentSesion = lazy(() => import("./pages/student/Sesion"));
@@ -43,18 +46,6 @@ function Loading() {
   return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 }
 
-function ErrorFallback({ error }: { error: Error }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="text-center space-y-4">
-        <h2 className="text-xl font-display font-bold text-destructive">Algo salió mal</h2>
-        <p className="text-muted-foreground">{error.message}</p>
-        <button onClick={() => window.location.reload()} className="text-primary underline">Recargar</button>
-      </div>
-    </div>
-  );
-}
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -66,7 +57,15 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requireRole="admin">
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<AdminDashboard />} />
                 <Route path="estudiantes" element={<AdminEstudiantes />} />
                 <Route path="cursos" element={<AdminCursos />} />
@@ -79,7 +78,14 @@ const App = () => (
                 <Route path="perfil" element={<AdminPerfil />} />
                 <Route path="psicometria" element={<AdminPsicometria />} />
               </Route>
-              <Route path="/student" element={<StudentLayout />}>
+              <Route
+                path="/student"
+                element={
+                  <ProtectedRoute requireRole="estudiante">
+                    <StudentLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<StudentDashboard />} />
                 <Route path="cursos" element={<StudentCursos />} />
                 <Route path="sesion/:id" element={<StudentSesion />} />
@@ -90,6 +96,7 @@ const App = () => (
                 <Route path="psicometria" element={<StudentPsicometria />} />
                 <Route path="psicometria/:testId" element={<StudentPsicometriaTest />} />
                 <Route path="concentracion" element={<StudentConcentracion />} />
+                <Route path="concentracion/stroop" element={<StudentStroop />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
