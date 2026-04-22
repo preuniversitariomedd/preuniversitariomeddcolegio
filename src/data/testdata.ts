@@ -177,97 +177,315 @@ const TAI: TestPsicometrico = {
 };
 
 // ============================================================
-// TESTS 3–8 — Estructura pendiente (Fase 2 redactará ítems)
-// Mantienen metadatos para listarlos en UI desde ya.
+// OPCIONES adicionales
 // ============================================================
 
-function pendiente(
-  id: string,
-  nombre: string,
-  descripcion: string,
-  tiempo: number,
-  instrucciones: string,
-  rangoMax: number,
-): TestPsicometrico {
-  return {
-    id,
-    nombre,
-    descripcion,
-    categoria: "psicometria",
-    tiempo_estimado: tiempo,
-    instrucciones,
-    opciones: LIKERT_4_ACUERDO,
-    preguntas: [],
-    calculo_resultado: "Pendiente Fase 2.",
-    umbrales: { bajo_max: Math.round(rangoMax * 0.4), medio_max: Math.round(rangoMax * 0.7) },
-    interpretacion: {
-      bajo: "Pendiente — se completará en Fase 2.",
-      medio: "Pendiente — se completará en Fase 2.",
-      alto: "Pendiente — se completará en Fase 2.",
-    },
-    estado: "pendiente",
-  };
-}
-
-const ROTTER = pendiente(
-  "rotter",
-  "Locus de Control (Rotter)",
-  "Mide si el estudiante atribuye sus resultados a sí mismo (interno) o al azar/otros (externo). Formato de elección forzada entre pares.",
-  10,
-  "Para cada par de afirmaciones, elige la que mejor describa lo que tú crees, aunque no estés totalmente de acuerdo con ninguna.",
-  13,
-);
-
-const EPA = pendiente(
-  "epa",
-  "Procrastinación Académica (EPA)",
-  "Mide la postergación de tareas académicas y sus causas (autorregulación / postergación de actividades).",
-  8,
-  "Indica con qué frecuencia te ocurre cada situación en tu vida académica.",
-  64,
-);
-
-const CD_RISC = pendiente(
-  "cd-risc-10",
-  "Resiliencia (CD-RISC-10)",
-  "Capacidad de recuperación ante fracaso y adversidad académica.",
-  10,
-  "Indica en qué medida cada afirmación describe cómo te has sentido en el último mes.",
-  40,
-);
-
-const EHS = pendiente(
-  "ehs",
-  "Habilidades Sociales (EHS)",
-  "Comunicación, asertividad y escucha activa en contexto preuniversitario.",
-  10,
-  "Lee cada situación e indica qué tan identificado/a te sientes con la respuesta descrita.",
-  132,
-);
-
-const IRI = pendiente(
-  "iri",
-  "Empatía (IRI)",
-  "Cuatro subescalas: toma de perspectiva, fantasía, preocupación empática y malestar personal.",
-  12,
-  "Indica qué tan bien te describe cada afirmación.",
-  140,
-);
-IRI.subescalas = [
-  { id: "perspectiva", nombre: "Toma de perspectiva" },
-  { id: "fantasia", nombre: "Fantasía" },
-  { id: "preocupacion", nombre: "Preocupación empática" },
-  { id: "malestar", nombre: "Malestar personal" },
+const LIKERT_5_DESCRIPCION: LikertOpcion[] = [
+  { valor: 1, etiqueta: "No me describe en absoluto" },
+  { valor: 2, etiqueta: "Me describe poco" },
+  { valor: 3, etiqueta: "Me describe algo" },
+  { valor: 4, etiqueta: "Me describe bastante" },
+  { valor: 5, etiqueta: "Me describe totalmente" },
 ];
 
-const PROSOCIAL = pendiente(
-  "prosocial",
-  "Conducta Prosocial",
-  "Altruismo, cooperación y comportamiento ético en el aula.",
-  8,
-  "Indica con qué frecuencia realizas cada conducta descrita.",
-  80,
-);
+const LIKERT_5_FRECUENCIA: LikertOpcion[] = [
+  { valor: 1, etiqueta: "Nunca" },
+  { valor: 2, etiqueta: "Casi nunca" },
+  { valor: 3, etiqueta: "A veces" },
+  { valor: 4, etiqueta: "Casi siempre" },
+  { valor: 5, etiqueta: "Siempre" },
+];
+
+const ROTTER_OPCIONES: LikertOpcion[] = [
+  { valor: 0, etiqueta: "A — Afirmación A" },
+  { valor: 1, etiqueta: "B — Afirmación B" },
+];
+
+// ============================================================
+// TEST 3 — Locus de Control (Rotter) — 13 ítems forzados
+// 0 = elección INTERNA, 1 = elección EXTERNA. Total = nivel de externalidad.
+// ============================================================
+
+const ROTTER: TestPsicometrico = {
+  id: "rotter",
+  nombre: "Locus de Control (Rotter)",
+  descripcion:
+    "Mide si atribuyes tus resultados a tu esfuerzo (interno) o al azar/otros (externo). Elección forzada entre pares.",
+  categoria: "psicometria",
+  tiempo_estimado: 10,
+  instrucciones:
+    "Para cada par, elige la afirmación con la que MÁS te identificas, aunque ninguna te describa por completo. La opción A representa locus interno, la B externo.",
+  opciones: ROTTER_OPCIONES,
+  preguntas: [
+    { id: "rt1", texto: "A) Mis notas dependen sobre todo de mi esfuerzo. / B) Mis notas dependen mucho de la suerte y del profesor que me toque." },
+    { id: "rt2", texto: "A) Si me preparo bien, puedo aprobar cualquier examen. / B) Por más que estudie, hay exámenes imposibles de aprobar." },
+    { id: "rt3", texto: "A) Las personas exitosas lo son porque trabajan duro. / B) El éxito depende sobre todo de estar en el lugar y momento correctos." },
+    { id: "rt4", texto: "A) Yo decido cómo organizar mi tiempo de estudio. / B) Mi tiempo de estudio depende de lo que pasa a mi alrededor." },
+    { id: "rt5", texto: "A) Cuando me va mal en una prueba, suele ser porque no estudié lo suficiente. / B) Cuando me va mal, casi siempre es porque las preguntas fueron injustas." },
+    { id: "rt6", texto: "A) Puedo influir en lo que los demás piensan de mí con mi conducta. / B) La opinión de los demás casi nunca depende de lo que uno hace." },
+    { id: "rt7", texto: "A) Mi futuro académico depende de las decisiones que tomo hoy. / B) Mi futuro académico depende de circunstancias que no controlo." },
+    { id: "rt8", texto: "A) Cuando tengo un problema, busco resolverlo yo mismo/a. / B) Cuando tengo un problema, espero a ver cómo se resuelve solo." },
+    { id: "rt9", texto: "A) Sacar buenas calificaciones es cuestión de método. / B) Sacar buenas calificaciones es cuestión de suerte." },
+    { id: "rt10", texto: "A) Si me esfuerzo, puedo cambiar mi situación actual. / B) Mi situación actual es difícil de cambiar haga lo que haga." },
+    { id: "rt11", texto: "A) Lo que me ocurre es consecuencia de mis decisiones. / B) Lo que me ocurre depende del destino." },
+    { id: "rt12", texto: "A) Puedo aprender cualquier materia si me lo propongo. / B) Hay materias para las que simplemente no estoy hecho/a." },
+    { id: "rt13", texto: "A) Mis logros son fruto de mi trabajo. / B) Mis logros han sido sobre todo cuestión de oportunidades." },
+  ],
+  calculo_resultado:
+    "Suma las elecciones tipo B (externas). Total 0–13. A mayor puntaje, locus de control más externo.",
+  umbrales: { bajo_max: 4, medio_max: 8 },
+  interpretacion: {
+    bajo: "Locus interno (0–4). Atribuyes tus resultados a tu esfuerzo y decisiones. Buen predictor de rendimiento académico.",
+    medio: "Locus mixto (5–8). Combinas atribuciones internas y externas. Equilibrio funcional.",
+    alto: "Locus externo (9–13). Tiendes a atribuir resultados al azar o a otros. Trabaja en sentido de agencia y autoeficacia.",
+  },
+  estado: "completo",
+};
+
+// ============================================================
+// TEST 4 — Procrastinación Académica (EPA) — 16 ítems
+// Likert 1–5 frecuencia. Subescalas: Autorregulación (AR, invertida) y
+// Postergación (PA).
+// ============================================================
+
+const EPA: TestPsicometrico = {
+  id: "epa",
+  nombre: "Procrastinación Académica (EPA)",
+  descripcion: "Postergación de tareas y autorregulación en el estudio.",
+  categoria: "psicometria",
+  tiempo_estimado: 8,
+  instrucciones: "Indica con qué frecuencia te ocurre cada situación en tu vida académica.",
+  opciones: LIKERT_5_FRECUENCIA,
+  subescalas: [
+    { id: "autorregulacion", nombre: "Autorregulación académica" },
+    { id: "postergacion", nombre: "Postergación de actividades" },
+  ],
+  preguntas: [
+    { id: "ep1", texto: "Cuando termino las clases reviso mis apuntes el mismo día.", subescala: "autorregulacion", invertida: true },
+    { id: "ep2", texto: "Postergo los trabajos de los cursos que no me agradan.", subescala: "postergacion" },
+    { id: "ep3", texto: "Constantemente intento mejorar mis hábitos de estudio.", subescala: "autorregulacion", invertida: true },
+    { id: "ep4", texto: "Invierto el tiempo necesario en estudiar aunque las clases sean aburridas.", subescala: "autorregulacion", invertida: true },
+    { id: "ep5", texto: "Cuando ya no entiendo algo, lo dejo para más tarde y al final no lo retomo.", subescala: "postergacion" },
+    { id: "ep6", texto: "Postergo los trabajos de los cursos que se me dificultan.", subescala: "postergacion" },
+    { id: "ep7", texto: "Postergo la lectura de los cursos que no me agradan.", subescala: "postergacion" },
+    { id: "ep8", texto: "Trato de motivarme para mantener mi ritmo de estudio.", subescala: "autorregulacion", invertida: true },
+    { id: "ep9", texto: "Trato de terminar mis trabajos importantes con tiempo de sobra.", subescala: "autorregulacion", invertida: true },
+    { id: "ep10", texto: "Me retraso al hacer mis tareas porque dedico tiempo a otras cosas.", subescala: "postergacion" },
+    { id: "ep11", texto: "Empiezo a estudiar para los exámenes con varios días de anticipación.", subescala: "autorregulacion", invertida: true },
+    { id: "ep12", texto: "Suelo dejar para el último momento las tareas largas.", subescala: "postergacion" },
+    { id: "ep13", texto: "Pospongo las decisiones académicas importantes.", subescala: "postergacion" },
+    { id: "ep14", texto: "Cuando estoy estudiando me distraigo con redes sociales o el celular.", subescala: "postergacion" },
+    { id: "ep15", texto: "Cumplo con los plazos que me fijo a mí mismo/a.", subescala: "autorregulacion", invertida: true },
+    { id: "ep16", texto: "Aunque planifique, termino haciendo todo a último momento.", subescala: "postergacion" },
+  ],
+  calculo_resultado:
+    "Cada ítem 1–5. Los ítems de Autorregulación se invierten (mayor procrastinación = menor autorregulación). Total 16–80.",
+  umbrales: { bajo_max: 32, medio_max: 56 },
+  interpretacion: {
+    bajo: "Procrastinación baja (16–32). Buena autorregulación; mantén tu sistema de planificación.",
+    medio: "Procrastinación moderada (33–56). Frecuente en estudiantes; aplica técnicas como Pomodoro y bloques de tiempo.",
+    alto: "Procrastinación alta (57–80). Riesgo para tu rendimiento. Usa metas pequeñas, refuerzo inmediato y elimina distractores.",
+  },
+  estado: "completo",
+};
+
+// ============================================================
+// TEST 5 — Resiliencia (CD-RISC-10) — 10 ítems
+// ============================================================
+
+const CD_RISC: TestPsicometrico = {
+  id: "cd-risc-10",
+  nombre: "Resiliencia (CD-RISC-10)",
+  descripcion: "Capacidad de recuperación ante el fracaso y la adversidad académica.",
+  categoria: "psicometria",
+  tiempo_estimado: 5,
+  instrucciones: "Indica en qué medida cada afirmación describe cómo te has sentido en el último mes.",
+  opciones: [
+    { valor: 0, etiqueta: "Nada cierto" },
+    { valor: 1, etiqueta: "Rara vez cierto" },
+    { valor: 2, etiqueta: "A veces cierto" },
+    { valor: 3, etiqueta: "A menudo cierto" },
+    { valor: 4, etiqueta: "Casi siempre cierto" },
+  ],
+  preguntas: [
+    { id: "cd1", texto: "Soy capaz de adaptarme a los cambios cuando ocurren." },
+    { id: "cd2", texto: "Puedo lidiar con casi cualquier situación." },
+    { id: "cd3", texto: "Trato de ver el lado positivo cuando enfrento problemas." },
+    { id: "cd4", texto: "Hacer frente al estrés me fortalece." },
+    { id: "cd5", texto: "Tiendo a recuperarme rápido tras enfermedades, lesiones u otras dificultades." },
+    { id: "cd6", texto: "Creo que puedo lograr mis metas aunque haya obstáculos." },
+    { id: "cd7", texto: "Bajo presión, mantengo la concentración y pienso con claridad." },
+    { id: "cd8", texto: "No me desanimo fácilmente ante el fracaso." },
+    { id: "cd9", texto: "Me considero una persona fuerte cuando enfrento retos y dificultades de la vida." },
+    { id: "cd10", texto: "Soy capaz de manejar sentimientos desagradables como tristeza, miedo o enojo." },
+  ],
+  calculo_resultado: "Cada ítem 0–4. Total 0–40.",
+  umbrales: { bajo_max: 20, medio_max: 30 },
+  interpretacion: {
+    bajo: "Resiliencia baja (0–20). Trabaja redes de apoyo, autocuidado y reinterpretación de fracasos como aprendizaje.",
+    medio: "Resiliencia media (21–30). Buen punto de partida; consolida hábitos de afrontamiento activo.",
+    alto: "Resiliencia alta (31–40). Recuperación ágil ante adversidad. Mantén tus rutinas de bienestar.",
+  },
+  estado: "completo",
+};
+
+// ============================================================
+// TEST 6 — Habilidades Sociales (EHS) — versión 18 ítems adaptada
+// Likert 1–4. Mayor puntaje = mejores HHSS.
+// ============================================================
+
+const EHS: TestPsicometrico = {
+  id: "ehs",
+  nombre: "Habilidades Sociales (EHS)",
+  descripcion: "Asertividad, comunicación y manejo social en contexto académico.",
+  categoria: "psicometria",
+  tiempo_estimado: 8,
+  instrucciones:
+    "Lee cada situación e indica qué tan de acuerdo estás con cada afirmación según tu manera habitual de actuar.",
+  opciones: LIKERT_4_ACUERDO,
+  preguntas: [
+    { id: "eh1", texto: "Cuando alguien dice algo con lo que no estoy de acuerdo, expreso mi opinión." },
+    { id: "eh2", texto: "Me cuesta decir 'no' aunque algo no me convenga.", invertida: true },
+    { id: "eh3", texto: "Soy capaz de iniciar una conversación con personas que no conozco." },
+    { id: "eh4", texto: "Si un compañero me interrumpe en clase, le pido respetuosamente que me deje terminar." },
+    { id: "eh5", texto: "Evito quejarme aunque me hayan tratado injustamente.", invertida: true },
+    { id: "eh6", texto: "Puedo expresar mis sentimientos sin sentirme incómodo/a." },
+    { id: "eh7", texto: "Sé pedir ayuda al profesor cuando no entiendo un tema." },
+    { id: "eh8", texto: "Me da vergüenza hacer preguntas en clase aunque tenga dudas.", invertida: true },
+    { id: "eh9", texto: "Acepto críticas constructivas sin sentirme atacado/a." },
+    { id: "eh10", texto: "Sé reconocer cuando me equivoco y pedir disculpas." },
+    { id: "eh11", texto: "Defiendo a un compañero cuando alguien lo trata mal." },
+    { id: "eh12", texto: "Cuando me elogian, sé recibir el cumplido sin minimizarlo." },
+    { id: "eh13", texto: "Cuando estoy en desacuerdo en un grupo, prefiero callarme.", invertida: true },
+    { id: "eh14", texto: "Puedo expresar enojo de forma respetuosa, sin gritar ni agredir." },
+    { id: "eh15", texto: "Me resulta fácil pedir prestado un libro o material a un compañero." },
+    { id: "eh16", texto: "Sé escuchar sin interrumpir cuando alguien me cuenta algo importante." },
+    { id: "eh17", texto: "Si un docente comete un error al calificar, lo señalo respetuosamente." },
+    { id: "eh18", texto: "Me cuesta hacer amigos nuevos en cursos o talleres.", invertida: true },
+  ],
+  calculo_resultado:
+    "Cada ítem 1–4. Los ítems negativos se invierten. Mayor puntaje = mejores habilidades sociales. Rango 18–72.",
+  umbrales: { bajo_max: 36, medio_max: 54 },
+  interpretacion: {
+    bajo: "HHSS bajas (18–36). Practica asertividad, role-playing y comunicación clara en grupo.",
+    medio: "HHSS medias (37–54). Buen nivel general; refuerza puntos específicos (decir no, recibir críticas).",
+    alto: "HHSS altas (55–72). Buen manejo social; aprovéchalo en trabajo en equipo y liderazgo.",
+  },
+  estado: "completo",
+};
+
+// ============================================================
+// TEST 7 — Empatía (IRI Davis) — 28 ítems, 4 subescalas (7 c/u)
+// Likert 0–4 ("No me describe" → "Me describe muy bien")
+// ============================================================
+
+const IRI_OPCIONES: LikertOpcion[] = [
+  { valor: 0, etiqueta: "No me describe" },
+  { valor: 1, etiqueta: "Me describe poco" },
+  { valor: 2, etiqueta: "Me describe regularmente" },
+  { valor: 3, etiqueta: "Me describe bastante" },
+  { valor: 4, etiqueta: "Me describe muy bien" },
+];
+
+const IRI: TestPsicometrico = {
+  id: "iri",
+  nombre: "Empatía (IRI)",
+  descripcion: "Cuatro dimensiones: toma de perspectiva, fantasía, preocupación empática y malestar personal.",
+  categoria: "psicometria",
+  tiempo_estimado: 12,
+  instrucciones: "Indica qué tan bien te describe cada afirmación. Sé honesto/a; no hay respuestas correctas.",
+  opciones: IRI_OPCIONES,
+  subescalas: [
+    { id: "perspectiva", nombre: "Toma de perspectiva" },
+    { id: "fantasia", nombre: "Fantasía" },
+    { id: "preocupacion", nombre: "Preocupación empática" },
+    { id: "malestar", nombre: "Malestar personal" },
+  ],
+  preguntas: [
+    // Toma de perspectiva (PT)
+    { id: "ir1", texto: "Antes de criticar a alguien, intento imaginar cómo me sentiría yo en su lugar.", subescala: "perspectiva" },
+    { id: "ir2", texto: "Cuando estoy seguro/a de algo, no pierdo tiempo escuchando los argumentos de otros.", subescala: "perspectiva", invertida: true },
+    { id: "ir3", texto: "Trato de mirar todos los lados de una discusión antes de tomar postura.", subescala: "perspectiva" },
+    { id: "ir4", texto: "Creo que toda historia tiene dos versiones y trato de ver ambas.", subescala: "perspectiva" },
+    { id: "ir5", texto: "Cuando estoy molesto/a con alguien, intento ponerme en su lugar por un momento.", subescala: "perspectiva" },
+    { id: "ir6", texto: "Antes de tomar una decisión que afecta a otros, considero distintas opiniones.", subescala: "perspectiva" },
+    { id: "ir7", texto: "Me cuesta ver las cosas desde el punto de vista de otra persona.", subescala: "perspectiva", invertida: true },
+    // Fantasía (FS)
+    { id: "ir8", texto: "Sueño despierto/a con frecuencia sobre cosas que podrían pasarme.", subescala: "fantasia" },
+    { id: "ir9", texto: "Me involucro mucho con los sentimientos de los personajes de una novela.", subescala: "fantasia" },
+    { id: "ir10", texto: "Soy objetivo/a viendo películas y rara vez me dejo llevar.", subescala: "fantasia", invertida: true },
+    { id: "ir11", texto: "Después de ver una película, me siento como si fuera uno de los personajes.", subescala: "fantasia" },
+    { id: "ir12", texto: "Rara vez me involucro emocionalmente con un buen libro.", subescala: "fantasia", invertida: true },
+    { id: "ir13", texto: "Cuando leo una historia, imagino vívidamente lo que sentiría si me ocurriera a mí.", subescala: "fantasia" },
+    { id: "ir14", texto: "Cuando veo una buena película, me pongo fácilmente en el lugar del protagonista.", subescala: "fantasia" },
+    // Preocupación empática (EC)
+    { id: "ir15", texto: "Suelo tener sentimientos de compasión por personas con menos suerte que yo.", subescala: "preocupacion" },
+    { id: "ir16", texto: "Cuando veo que se aprovechan de alguien, siento ganas de protegerlo.", subescala: "preocupacion" },
+    { id: "ir17", texto: "A veces no me da pena la gente cuando tiene problemas.", subescala: "preocupacion", invertida: true },
+    { id: "ir18", texto: "Las desgracias de los demás no suelen perturbarme mucho.", subescala: "preocupacion", invertida: true },
+    { id: "ir19", texto: "Me describiría como una persona de corazón blando.", subescala: "preocupacion" },
+    { id: "ir20", texto: "Me conmueven las cosas que veo que les pasan a otras personas.", subescala: "preocupacion" },
+    { id: "ir21", texto: "Cuando veo a alguien siendo tratado injustamente, siento poca lástima por él/ella.", subescala: "preocupacion", invertida: true },
+    // Malestar personal (PD)
+    { id: "ir22", texto: "En situaciones de emergencia me siento aprensivo/a e incómodo/a.", subescala: "malestar" },
+    { id: "ir23", texto: "Suelo mantener la calma en situaciones tensas con otras personas.", subescala: "malestar", invertida: true },
+    { id: "ir24", texto: "Cuando veo a alguien necesitando ayuda urgentemente, me bloqueo.", subescala: "malestar" },
+    { id: "ir25", texto: "A veces me siento desamparado/a en situaciones emocionales muy fuertes.", subescala: "malestar" },
+    { id: "ir26", texto: "Cuando alguien cercano necesita mucho mi apoyo, me cuesta manejar mis propias emociones.", subescala: "malestar" },
+    { id: "ir27", texto: "Generalmente soy efectivo/a tratando con emergencias.", subescala: "malestar", invertida: true },
+    { id: "ir28", texto: "Tiendo a perder el control en emergencias.", subescala: "malestar" },
+  ],
+  calculo_resultado:
+    "Cada ítem 0–4. Ítems negativos invertidos. Total 0–112 + puntaje por subescala (0–28 cada una).",
+  umbrales: { bajo_max: 50, medio_max: 80 },
+  interpretacion: {
+    bajo: "Empatía baja (0–50). Practica escucha activa y toma de perspectiva en discusiones cotidianas.",
+    medio: "Empatía media (51–80). Capacidad empática funcional. Revisa la subescala más baja para mejorar.",
+    alto: "Empatía alta (81–112). Alta sintonía emocional con otros. Cuida también tu autorregulación para no agotarte.",
+  },
+  estado: "completo",
+};
+
+// ============================================================
+// TEST 8 — Conducta Prosocial (Caprara, adaptado) — 16 ítems
+// Likert 1–5 frecuencia. Mayor puntaje = mayor prosocialidad.
+// ============================================================
+
+const PROSOCIAL: TestPsicometrico = {
+  id: "prosocial",
+  nombre: "Conducta Prosocial",
+  descripcion: "Altruismo, cooperación y comportamiento ético en el aula.",
+  categoria: "psicometria",
+  tiempo_estimado: 8,
+  instrucciones: "Indica con qué frecuencia realizas cada conducta descrita en tu vida cotidiana.",
+  opciones: LIKERT_5_FRECUENCIA,
+  preguntas: [
+    { id: "pr1", texto: "Comparto lo que tengo con quienes lo necesitan." },
+    { id: "pr2", texto: "Trato de ayudar a otros." },
+    { id: "pr3", texto: "Me ofrezco voluntariamente para ayudar a quien lo necesita." },
+    { id: "pr4", texto: "Soy de los/las que primeros/as en ayudar a alguien en dificultades." },
+    { id: "pr5", texto: "Hago feliz a la gente con la que estoy." },
+    { id: "pr6", texto: "Comparto las cosas que tengo con mis amigos." },
+    { id: "pr7", texto: "Intento consolar a quien está triste." },
+    { id: "pr8", texto: "Me esfuerzo por ayudar a otros aunque no me lo pidan." },
+    { id: "pr9", texto: "Cuando un compañero no entiende algo, le explico con paciencia." },
+    { id: "pr10", texto: "Cuando alguien tiene un problema, intento ayudarle a resolverlo." },
+    { id: "pr11", texto: "Soy empático/a con los problemas de los demás." },
+    { id: "pr12", texto: "Defiendo a quien está siendo tratado injustamente." },
+    { id: "pr13", texto: "Reconozco públicamente los logros de otras personas." },
+    { id: "pr14", texto: "Me preocupo por el bienestar de las personas a mi alrededor." },
+    { id: "pr15", texto: "Coopero en trabajos grupales aunque no me beneficie directamente." },
+    { id: "pr16", texto: "Devuelvo lo prestado en buen estado y a tiempo." },
+  ],
+  calculo_resultado: "Cada ítem 1–5. Total 16–80.",
+  umbrales: { bajo_max: 40, medio_max: 60 },
+  interpretacion: {
+    bajo: "Prosocialidad baja (16–40). Practica gestos pequeños y cotidianos de ayuda y cooperación.",
+    medio: "Prosocialidad media (41–60). Buen nivel; identifica oportunidades concretas para aportar al grupo.",
+    alto: "Prosocialidad alta (61–80). Comportamiento altruista marcado. Cuida también tus propios límites.",
+  },
+  estado: "completo",
+};
 
 // ============================================================
 // EXPORT TESTS
