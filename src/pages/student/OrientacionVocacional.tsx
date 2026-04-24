@@ -171,6 +171,19 @@ export default function OrientacionVocacional() {
     return { perfil, testsUsados, ranking, fechaMasReciente: fecha };
   }, [resultados]);
 
+  const facultades = useMemo(() => {
+    const map = new Map<string, { sigla: string; carreras: ResultadoCompatibilidad[] }>();
+    for (const r of ranking) {
+      const key = r.carrera.facultad;
+      if (!map.has(key)) map.set(key, { sigla: r.carrera.siglaFacultad, carreras: [] });
+      map.get(key)!.carreras.push(r);
+    }
+    return Array.from(map.entries()).map(([nombre, v]) => ({
+      nombre, sigla: v.sigla, carreras: v.carreras,
+      promedio: Math.round(v.carreras.reduce((s, x) => s + x.porcentaje, 0) / v.carreras.length),
+    })).sort((a, b) => b.promedio - a.promedio);
+  }, [ranking]);
+
   const guardarMut = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("No autenticado");
