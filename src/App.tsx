@@ -34,6 +34,7 @@ const StudentCompetencia = lazy(() => import("./pages/student/Competencia"));
 const StudentBiblioteca = lazy(() => import("./pages/student/Biblioteca"));
 const StudentMensajes = lazy(() => import("./pages/student/Mensajes"));
 const StudentPerfil = lazy(() => import("./pages/student/Perfil"));
+const StudentOrientacion = lazy(() => import("./pages/student/OrientacionVocacional"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -97,6 +98,7 @@ const App = () => (
                 <Route path="psicometria/:testId" element={<StudentPsicometriaTest />} />
                 <Route path="concentracion" element={<StudentConcentracion />} />
                 <Route path="concentracion/stroop" element={<StudentStroop />} />
+                <Route path="orientacion-vocacional" element={<StudentOrientacion />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
