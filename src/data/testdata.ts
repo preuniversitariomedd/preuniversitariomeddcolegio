@@ -589,6 +589,91 @@ export const EJERCICIOS_CONCENTRACION: EjercicioConcentracion[] = [
     componente_react: "RespiracionExercise",
     metricas: ["ciclos_completados", "duracion_segundos"],
   },
+  {
+    id: "schulte",
+    nombre: "Tabla de Schulte",
+    descripcion:
+      "Encuentra los números en orden ascendente. Entrena tu visión periférica y velocidad de procesamiento visual.",
+    categoria: "concentracion",
+    prioridad: "alta",
+    tiempo_estimado: 3,
+    instrucciones:
+      "Toca los números del 1 al N en orden. Mira al centro de la tabla y usa tu visión periférica. 4 niveles: 3×3, 4×4, 5×5 y 7×7.",
+    componente_react: "SchulteTest",
+    metricas: ["nivel", "tiempo_segundos", "errores", "calificacion"],
+  },
+  {
+    id: "punto_focal",
+    nombre: "Punto Focal",
+    descripcion: "Fija la mirada y mejora el enfoque sostenido siguiendo un punto en movimiento.",
+    categoria: "concentracion",
+    prioridad: "media",
+    tiempo_estimado: 3,
+    instrucciones:
+      "Sigue con la vista el punto durante 3 minutos sin perder el foco. No muevas la cabeza, solo los ojos.",
+    componente_react: "PuntoFocalExercise",
+    metricas: ["duracion_segundos", "completado"],
+  },
+  {
+    id: "busqueda_rapida",
+    nombre: "Búsqueda Rápida",
+    descripcion: "Detecta el símbolo diferente en una grilla 5×5 lo más rápido posible.",
+    categoria: "concentracion",
+    prioridad: "alta",
+    tiempo_estimado: 3,
+    instrucciones:
+      "En cada ronda hay un carácter distinto en la grilla. Tócalo. Son 10 rondas cronometradas.",
+    componente_react: "BusquedaRapidaExercise",
+    metricas: ["aciertos", "tiempo_promedio_ms", "duracion_segundos"],
+  },
+  {
+    id: "memoria_visual",
+    nombre: "Memoria Visual",
+    descripcion: "Reproduce secuencias de colores que aparecen brevemente. Sube de 3 a 7 elementos.",
+    categoria: "concentracion",
+    prioridad: "media",
+    tiempo_estimado: 4,
+    instrucciones:
+      "Memoriza la secuencia mostrada y reprodúcela tocando los colores en el mismo orden. Empieza en 3 y avanza hasta 7.",
+    componente_react: "MemoriaVisualExercise",
+    metricas: ["nivel_max", "errores", "duracion_segundos"],
+  },
+  {
+    id: "pomodoro",
+    nombre: "Pomodoro Guiado",
+    descripcion: "Bloque de 25 minutos de estudio + 5 de descanso visual con respiración.",
+    categoria: "concentracion",
+    prioridad: "alta",
+    tiempo_estimado: 30,
+    instrucciones:
+      "Estudia enfocado 25 minutos. En el descanso de 5 sigue la guía de respiración visual. Cada bloque completo cuenta como una sesión.",
+    componente_react: "PomodoroExercise",
+    metricas: ["duracion_segundos", "ciclos_completados"],
+  },
+  {
+    id: "regla_20_20_20",
+    nombre: "Regla 20-20-20",
+    descripcion: "Cada 20 minutos, mira 20 segundos a un objeto a 20 pies (≈6 m) de distancia.",
+    categoria: "concentracion",
+    prioridad: "media",
+    tiempo_estimado: 1,
+    instrucciones:
+      "Activa el recordatorio. Cuando suene, aparta la vista de la pantalla y mira un objeto lejano durante 20 segundos.",
+    componente_react: "Regla202020Exercise",
+    metricas: ["pausas_completadas", "duracion_segundos"],
+  },
+  {
+    id: "lectura_rapida",
+    nombre: "Lectura Rápida",
+    descripcion: "Lee párrafos de ciencias palabra por palabra a velocidad ajustable y comprueba comprensión.",
+    categoria: "concentracion",
+    prioridad: "media",
+    tiempo_estimado: 4,
+    instrucciones:
+      "Ajusta la velocidad (100-400 ppm). Lee el párrafo y responde la pregunta de comprensión al final.",
+    componente_react: "LecturaRapidaExercise",
+    metricas: ["ppm", "aciertos_comprension", "duracion_segundos"],
+  },
 ];
 
 export function getEjercicioById(id: string): EjercicioConcentracion | undefined {
