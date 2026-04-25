@@ -34,6 +34,8 @@ export default function AdminPerfil() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const allPassed = checks.every(c => c.test(password)) && password === confirm && confirm.length > 0;
+  const strength = useMemo(() => passwordStrength(password), [password]);
+  const meta = STRENGTH_META[strength];
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +102,14 @@ export default function AdminPerfil() {
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div><Label>Nueva contraseña</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
+            {password.length > 0 && (
+              <div className="space-y-1">
+                <div className="h-1.5 w-full bg-muted rounded overflow-hidden">
+                  <div className={`h-full ${meta.color} ${meta.width} transition-all`} />
+                </div>
+                <p className="text-xs text-muted-foreground">Fortaleza: <span className="font-medium text-foreground">{meta.label}</span></p>
+              </div>
+            )}
             <div><Label>Confirmar</Label><Input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} /></div>
             <div className="space-y-1">
               {checks.map(c => (
