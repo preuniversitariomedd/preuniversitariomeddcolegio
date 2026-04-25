@@ -170,6 +170,10 @@ export default function StudentLayout() {
         </main>
       </ViewAsStudentContext.Provider>
 
+      <footer className="hidden md:block border-t border-border bg-card/50 py-3 px-6 text-[11px] text-muted-foreground text-center">
+        © 2020-2026 PreUniversitario MEDD · Víctor Cañizares González · Fundado el 9 de enero de 2020 · Todos los derechos reservados
+      </footer>
+
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around py-2 z-50">
         {studentLinks.map(item => {
           const isActive = item.url === "/student" ? location.pathname === "/student" : location.pathname.startsWith(item.url);

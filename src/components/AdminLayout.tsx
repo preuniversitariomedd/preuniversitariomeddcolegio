@@ -149,6 +149,9 @@ export default function AdminLayout() {
           <main className="flex-1 p-4 md:p-6 overflow-auto">
             <Outlet />
           </main>
+          <footer className="border-t border-border bg-card/50 py-3 px-6 text-[11px] text-muted-foreground text-center">
+            © 2020-2026 PreUniversitario MEDD · Víctor Cañizares González · Fundado el 9 de enero de 2020 · Todos los derechos reservados
+          </footer>
         </div>
       </div>
     </SidebarProvider>
