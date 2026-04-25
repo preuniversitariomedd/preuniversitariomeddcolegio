@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, RotateCcw, Trash2, UserPlus, BookOpen, Settings2, Download } from "lucide-react";
 import { downloadCSV } from "@/lib/exportUtils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { validarCedulaEcuatoriana } from "@/lib/security";
 
 function calcAge(dob: string | null) {
   if (!dob) return "—";
@@ -218,6 +219,9 @@ export default function AdminEstudiantes() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      if (!validarCedulaEcuatoriana(form.cedula)) {
+        throw new Error("Cédula ecuatoriana inválida");
+      }
       const { data, error } = await supabase.functions.invoke("manage-users", { body: { action: "crear", ...form } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

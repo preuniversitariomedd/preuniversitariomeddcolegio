@@ -160,7 +160,7 @@ export default function StudentLayout() {
               <User className="h-4 w-4 text-primary" />
             )}
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut} className="text-destructive">Salir</Button>
+          <Button variant="ghost" size="sm" onClick={() => signOut()} className="text-destructive">Salir</Button>
         </div>
       </header>
 

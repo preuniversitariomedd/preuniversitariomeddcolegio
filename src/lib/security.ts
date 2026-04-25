@@ -47,3 +47,46 @@ export function checkAdminPermission(role: string | null): void {
     throw new Error("Acción no permitida: requiere permisos de administrador.");
   }
 }
+
+// ───────────────── Cédula ecuatoriana (algoritmo módulo 10) ─────────────────
+export function validarCedulaEcuatoriana(cedula: string): boolean {
+  if (!/^\d{10}$/.test(cedula)) return false;
+  const provincia = parseInt(cedula.substring(0, 2), 10);
+  if (provincia < 1 || provincia > 24) return false;
+  const tercerDigito = parseInt(cedula[2], 10);
+  if (tercerDigito > 5) return false; // personas naturales
+  const digitos = cedula.split("").map(Number);
+  let suma = 0;
+  for (let i = 0; i < 9; i++) {
+    let val = digitos[i] * (i % 2 === 0 ? 2 : 1);
+    if (val > 9) val -= 9;
+    suma += val;
+  }
+  const verificador = suma % 10 === 0 ? 0 : 10 - (suma % 10);
+  return verificador === digitos[9];
+}
+
+// ───────────────── Ofuscación localStorage (NO es cifrado real) ─────────────────
+// btoa + encodeURIComponent: oculta el contenido a una inspección casual,
+// pero un usuario técnico puede revertirlo. Solo para datos no sensibles
+// (contadores de intentos, marcas de bloqueo). NO usar para contraseñas o tokens.
+export function encodeStorage(data: string): string {
+  try { return btoa(encodeURIComponent(data)); } catch { return ""; }
+}
+export function decodeStorage(data: string): string {
+  try { return decodeURIComponent(atob(data)); } catch { return ""; }
+}
+
+// ───────────────── Fortaleza de contraseña ─────────────────
+export type PasswordStrength = "debil" | "media" | "fuerte";
+export function passwordStrength(p: string): PasswordStrength {
+  let score = 0;
+  if (p.length >= 8) score++;
+  if (p.length >= 12) score++;
+  if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++;
+  if (/\d/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  if (score <= 2) return "debil";
+  if (score <= 4) return "media";
+  return "fuerte";
+}

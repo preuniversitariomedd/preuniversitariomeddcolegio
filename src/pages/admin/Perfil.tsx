@@ -1,13 +1,20 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_INFO } from "@/App";
+import { passwordStrength } from "@/lib/security";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2, User, Camera, Info } from "lucide-react";
+
+const STRENGTH_META = {
+  debil:  { label: "Débil",  color: "bg-destructive", width: "w-1/3" },
+  media:  { label: "Media",  color: "bg-accent",      width: "w-2/3" },
+  fuerte: { label: "Fuerte", color: "bg-success",     width: "w-full" },
+} as const;
 
 const checks = [
   { label: "8+ caracteres", test: (p: string) => p.length >= 8 },
@@ -27,6 +34,8 @@ export default function AdminPerfil() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const allPassed = checks.every(c => c.test(password)) && password === confirm && confirm.length > 0;
+  const strength = useMemo(() => passwordStrength(password), [password]);
+  const meta = STRENGTH_META[strength];
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +102,14 @@ export default function AdminPerfil() {
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div><Label>Nueva contraseña</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
+            {password.length > 0 && (
+              <div className="space-y-1">
+                <div className="h-1.5 w-full bg-muted rounded overflow-hidden">
+                  <div className={`h-full ${meta.color} ${meta.width} transition-all`} />
+                </div>
+                <p className="text-xs text-muted-foreground">Fortaleza: <span className="font-medium text-foreground">{meta.label}</span></p>
+              </div>
+            )}
             <div><Label>Confirmar</Label><Input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} /></div>
             <div className="space-y-1">
               {checks.map(c => (
