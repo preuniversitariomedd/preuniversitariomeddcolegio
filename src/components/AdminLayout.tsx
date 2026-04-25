@@ -84,7 +84,7 @@ function AdminSidebar() {
             {dark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
             {!collapsed && (dark ? "Modo claro" : "Modo oscuro")}
           </Button>
-          <Button variant="ghost" size="sm" className="w-full justify-start text-destructive" onClick={signOut}>
+          <Button variant="ghost" size="sm" className="w-full justify-start text-destructive" onClick={() => signOut()}>
             <LogOut className="h-4 w-4 mr-2" />
             {!collapsed && "Cerrar sesión"}
           </Button>
