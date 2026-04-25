@@ -37,6 +37,16 @@ const StudentPerfil = lazy(() => import("./pages/student/Perfil"));
 const StudentOrientacion = lazy(() => import("./pages/student/OrientacionVocacional"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+export const APP_INFO = {
+  nombre: "PreUniversitario MEDD",
+  version: "2.0.0",
+  autor: "Víctor Cañizares González",
+  fundacion: "2020-01-09",
+  copyright: "© 2020-2026 Víctor Cañizares González",
+  descripcion: "Plataforma educativa digital para preparación universitaria",
+  contacto: "admin@meddprepolitecnico.com",
+} as const;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 5 * 60 * 1000, retry: 1 },
