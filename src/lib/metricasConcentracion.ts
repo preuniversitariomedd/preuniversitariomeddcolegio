@@ -71,12 +71,14 @@ export async function guardarResultadoConcentracion(params: {
   const metricas = normalizarMetricas(params.metricasCrudas);
   const { data, error } = await supabase
     .from("resultados_ejercicios_concentracion")
-    .insert({
-      user_id: params.userId,
-      ejercicio_id: params.ejercicioId,
-      completado: params.completado ?? true,
-      metricas: metricas as unknown as Record<string, unknown>,
-    })
+    .insert([
+      {
+        user_id: params.userId,
+        ejercicio_id: params.ejercicioId,
+        completado: params.completado ?? true,
+        metricas: metricas as never,
+      },
+    ])
     .select()
     .single();
 
