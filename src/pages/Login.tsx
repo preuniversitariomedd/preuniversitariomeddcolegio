@@ -16,9 +16,20 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState(() => {
+    const r = sessionStorage.getItem("medd_logout_reason");
+    if (r === "inactividad") return "Sesión cerrada por inactividad. Vuelve a iniciar sesión.";
+    if (r === "expirada") return "Tu sesión ha expirado. Por favor inicia sesión nuevamente.";
+    return "";
+  });
   const [submitting, setSubmitting] = useState(false);
   const [needsChange, setNeedsChange] = useState(false);
   const { signIn } = useAuth();
+
+  if (info) {
+    // Limpiar para que no reaparezca en el próximo login
+    sessionStorage.removeItem("medd_logout_reason");
+  }
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -69,6 +80,7 @@ export default function Login() {
                   </button>
                 </div>
               </div>
+              {info && <p className="text-amber-600 dark:text-amber-400 text-sm bg-amber-500/10 border border-amber-500/30 rounded p-2">{info}</p>}
               {error && <p className="text-destructive text-sm">{error}</p>}
               <Button type="submit" className="w-full" variant="neon" disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Iniciar Sesión"}
