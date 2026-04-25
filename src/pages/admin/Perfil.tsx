@@ -1,12 +1,13 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { APP_INFO } from "@/App";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Loader2, User, Camera } from "lucide-react";
+import { Check, X, Loader2, User, Camera, Info } from "lucide-react";
 
 const checks = [
   { label: "8+ caracteres", test: (p: string) => p.length >= 8 },
@@ -105,6 +106,41 @@ export default function AdminPerfil() {
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Actualizar"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Info className="h-5 w-5 text-primary" /> Información del sistema
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div className="flex justify-between sm:block">
+              <dt className="text-muted-foreground">Nombre</dt>
+              <dd className="font-medium">{APP_INFO.nombre}</dd>
+            </div>
+            <div className="flex justify-between sm:block">
+              <dt className="text-muted-foreground">Versión</dt>
+              <dd className="font-mono">{APP_INFO.version}</dd>
+            </div>
+            <div className="flex justify-between sm:block">
+              <dt className="text-muted-foreground">Autor</dt>
+              <dd className="font-medium">{APP_INFO.autor}</dd>
+            </div>
+            <div className="flex justify-between sm:block">
+              <dt className="text-muted-foreground">Fecha de fundación</dt>
+              <dd>9 de enero de 2020</dd>
+            </div>
+            <div className="flex justify-between sm:block sm:col-span-2">
+              <dt className="text-muted-foreground">Copyright</dt>
+              <dd>{APP_INFO.copyright}</dd>
+            </div>
+            <div className="sm:col-span-2 pt-2 mt-2 border-t border-border text-xs text-muted-foreground">
+              Todos los derechos reservados — Software propietario.
+            </div>
+          </dl>
         </CardContent>
       </Card>
     </div>
