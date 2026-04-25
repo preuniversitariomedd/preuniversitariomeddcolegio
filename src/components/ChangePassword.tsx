@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { passwordStrength } from "@/lib/security";
+
+const STRENGTH_META = {
+  debil:  { label: "Débil",  color: "bg-destructive", width: "w-1/3" },
+  media:  { label: "Media",  color: "bg-accent",      width: "w-2/3" },
+  fuerte: { label: "Fuerte", color: "bg-success",     width: "w-full" },
+} as const;
 
 const checks = [
   { label: "8+ caracteres", test: (p: string) => p.length >= 8 },
@@ -23,6 +30,9 @@ export default function ChangePassword() {
   const { changePassword, role } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const strength = useMemo(() => passwordStrength(password), [password]);
+  const meta = STRENGTH_META[strength];
 
   const allPassed = checks.every(c => c.test(password)) && password === confirm && confirm.length > 0;
 
@@ -51,6 +61,14 @@ export default function ChangePassword() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input type="password" placeholder="Nueva contraseña" value={password} onChange={e => setPassword(e.target.value)} />
+              {password.length > 0 && (
+                <div className="space-y-1">
+                  <div className="h-1.5 w-full bg-muted rounded overflow-hidden">
+                    <div className={`h-full ${meta.color} ${meta.width} transition-all`} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Fortaleza: <span className="font-medium text-foreground">{meta.label}</span></p>
+                </div>
+              )}
               <Input type="password" placeholder="Confirmar contraseña" value={confirm} onChange={e => setConfirm(e.target.value)} />
               <div className="space-y-1">
                 {checks.map(c => (
