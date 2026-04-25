@@ -1,13 +1,20 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_INFO } from "@/App";
+import { passwordStrength } from "@/lib/security";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2, User, Camera, Info } from "lucide-react";
+
+const STRENGTH_META = {
+  debil:  { label: "Débil",  color: "bg-destructive", width: "w-1/3" },
+  media:  { label: "Media",  color: "bg-accent",      width: "w-2/3" },
+  fuerte: { label: "Fuerte", color: "bg-success",     width: "w-full" },
+} as const;
 
 const checks = [
   { label: "8+ caracteres", test: (p: string) => p.length >= 8 },
