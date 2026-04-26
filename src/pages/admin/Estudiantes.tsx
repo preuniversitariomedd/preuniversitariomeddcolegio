@@ -12,7 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, Trash2, UserPlus, BookOpen, Settings2, Download } from "lucide-react";
+import { Loader2, RotateCcw, Trash2, UserPlus, BookOpen, Settings2, Download, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { downloadCSV } from "@/lib/exportUtils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { validarCedulaEcuatoriana } from "@/lib/security";
@@ -423,6 +424,9 @@ export default function AdminEstudiantes() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" title="Perfil 360°" asChild>
+                              <Link to={`/admin/estudiantes/${s.id}/perfil-360`}><Sparkles className="h-4 w-4 text-primary" /></Link>
+                            </Button>
                             <SessionManagerDialog userId={s.id} nombre={`${s.nombre} ${s.apellidos}`} />
                             <Button variant="ghost" size="icon" title="Resetear contraseña" onClick={() => resetMutation.mutate(s.id)}>
                               <RotateCcw className="h-4 w-4" />

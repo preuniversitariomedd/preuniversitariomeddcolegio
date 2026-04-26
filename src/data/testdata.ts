@@ -491,7 +491,9 @@ const PROSOCIAL: TestPsicometrico = {
 // EXPORT TESTS
 // ============================================================
 
-export const TESTS: TestPsicometrico[] = [
+import { BANCO_24_TESTS, type TestExtendido } from "./banco24";
+
+const TESTS_BASE: TestPsicometrico[] = [
   ROSENBERG,
   TAI,
   ROTTER,
@@ -502,9 +504,24 @@ export const TESTS: TestPsicometrico[] = [
   PROSOCIAL,
 ];
 
-export function getTestById(id: string): TestPsicometrico | undefined {
+/** Banco completo: 8 psicométricos + 24 (vocacionales/personalidad/inteligencias) */
+export const TESTS: (TestPsicometrico | TestExtendido)[] = [
+  ...TESTS_BASE,
+  ...BANCO_24_TESTS,
+];
+
+export type CategoriaTest = "psicometria" | "vocacional" | "personalidad" | "inteligencias";
+
+export function getTestById(id: string): TestPsicometrico | TestExtendido | undefined {
   return TESTS.find((t) => t.id === id);
 }
+
+export function getTestsPorCategoria(cat: CategoriaTest) {
+  return TESTS.filter((t) => t.categoria === cat);
+}
+
+export { BANCO_24_TESTS };
+export type { TestExtendido };
 
 // ============================================================
 // EJERCICIOS DE CONCENTRACIÓN VISUAL

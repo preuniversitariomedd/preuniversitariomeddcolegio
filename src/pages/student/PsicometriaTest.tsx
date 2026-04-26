@@ -42,7 +42,7 @@ export default function StudentPsicometriaTest() {
   const finalizar = async () => {
     if (!user) return;
     setSaving(true);
-    const r = calcularResultado(test, respuestas);
+    const r = calcularResultado(test as any, respuestas);
     const tiempo = Math.round((Date.now() - start) / 1000);
 
     const { error } = await supabase.from("resultados_tests").insert({
