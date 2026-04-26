@@ -35,6 +35,7 @@ const StudentBiblioteca = lazy(() => import("./pages/student/Biblioteca"));
 const StudentMensajes = lazy(() => import("./pages/student/Mensajes"));
 const StudentPerfil = lazy(() => import("./pages/student/Perfil"));
 const StudentOrientacion = lazy(() => import("./pages/student/OrientacionVocacional"));
+const StudentCompararCarreras = lazy(() => import("./pages/student/CompararCarreras"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 export const APP_INFO = {
