@@ -10,7 +10,7 @@ export interface TestExtendido extends Omit<TestPsicometrico, "categoria"> {
   icono: string;
   subtitulo: string;
   /** Mapa subescala → metadatos (color, descripción, carreras) */
-  scales: Record<string, { name: string; color: string; description: string; careers?: string[]; high?: string; low?: string }>;
+  scales: Record<string, { name: string; color: string; description: string; careers?: string[]; high?: string; low?: string; [key: string]: any }>;
   scaleType: "likert5" | "dichotomous";
   /** Para MBTI: pares de dicotomías para calcular tipo (e.g. [["E","I"],["S","N"],["T","F"],["J","P"]]) */
   mbtiPairs?: [string, string][];
