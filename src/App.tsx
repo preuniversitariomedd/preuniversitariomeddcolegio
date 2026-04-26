@@ -13,6 +13,7 @@ const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminEstudiantes = lazy(() => import("./pages/admin/Estudiantes"));
+const AdminPerfil360 = lazy(() => import("./pages/admin/Perfil360"));
 const AdminCursos = lazy(() => import("./pages/admin/Cursos"));
 const AdminGrupos = lazy(() => import("./pages/admin/Grupos"));
 const AdminContenido = lazy(() => import("./pages/admin/Contenido"));
@@ -80,6 +81,7 @@ const App = () => (
               >
                 <Route index element={<AdminDashboard />} />
                 <Route path="estudiantes" element={<AdminEstudiantes />} />
+                <Route path="estudiantes/:id/perfil-360" element={<AdminPerfil360 />} />
                 <Route path="cursos" element={<AdminCursos />} />
                 <Route path="grupos" element={<AdminGrupos />} />
                 <Route path="contenido" element={<AdminContenido />} />
