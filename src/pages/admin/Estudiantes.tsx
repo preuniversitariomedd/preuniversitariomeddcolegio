@@ -423,6 +423,9 @@ export default function AdminEstudiantes() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" title="Perfil 360°" asChild>
+                              <Link to={`/admin/estudiantes/${s.id}/perfil-360`}><Sparkles className="h-4 w-4 text-primary" /></Link>
+                            </Button>
                             <SessionManagerDialog userId={s.id} nombre={`${s.nombre} ${s.apellidos}`} />
                             <Button variant="ghost" size="icon" title="Resetear contraseña" onClick={() => resetMutation.mutate(s.id)}>
                               <RotateCcw className="h-4 w-4" />
