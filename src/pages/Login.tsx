@@ -80,7 +80,7 @@ export default function Login() {
                   </button>
                 </div>
               </div>
-              {info && <p className="text-sm bg-accent/30 border border-accent text-accent-foreground rounded p-2">{info}</p>}
+              {info && <p className="text-sm bg-muted border border-border text-foreground rounded-md p-3 leading-relaxed">{info}</p>}
               {error && <p className="text-destructive text-sm">{error}</p>}
               <Button type="submit" className="w-full" variant="neon" disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Iniciar Sesión"}
