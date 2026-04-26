@@ -26,6 +26,7 @@ const studentLinks = [
   { title: "Psicometría", url: "/student/psicometria", icon: Brain },
   { title: "Concentración", url: "/student/concentracion", icon: Target },
   { title: "Orientación", url: "/student/orientacion-vocacional", icon: Compass },
+  { title: "Comparar carreras", url: "/student/comparar-carreras", icon: Columns3 },
   { title: "Mensajes", url: "/student/mensajes", icon: MessageSquare },
   { title: "Perfil", url: "/student/perfil", icon: User },
 ];
