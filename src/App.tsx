@@ -110,6 +110,7 @@ const App = () => (
                 <Route path="concentracion" element={<StudentConcentracion />} />
                 <Route path="concentracion/stroop" element={<StudentStroop />} />
                 <Route path="orientacion-vocacional" element={<StudentOrientacion />} />
+                <Route path="comparar-carreras" element={<StudentCompararCarreras />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
