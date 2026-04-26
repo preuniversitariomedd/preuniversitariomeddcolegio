@@ -1,6 +1,6 @@
 import { useAuth } from "@/components/AuthProvider";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon, Sun, Zap, ShieldCheck, Brain, Target, Compass } from "lucide-react";
+import { Loader2, LayoutDashboard, BookOpen, Library, MessageSquare, User, Moon, Sun, Zap, ShieldCheck, Brain, Target, Compass, Columns3 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
