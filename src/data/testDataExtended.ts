@@ -3,7 +3,9 @@
 // © 2020-2026 PreUniversitario MEDD — Víctor Cañizares González
 // ============================================================
 
-import type { Test, QuestionOption } from "./testData";
+// Tipos locales permisivos (independientes de testdata.ts para evitar conflictos de casing)
+export interface QuestionOption { label: string; value: number; }
+export type Test = Record<string, any>;
 
 const acuerdo5: QuestionOption[] = [
   { label: "Totalmente en desacuerdo", value: 1 },

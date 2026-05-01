@@ -88,10 +88,15 @@ function CarreraCard({ resultado, rank, expanded, onToggle }: { resultado: Resul
                   <Badge key={f} variant="secondary" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-0 text-[11px]">{f}</Badge>
                 ))}
               </div>
-              <Button variant="ghost" size="sm" onClick={onToggle} className="mt-2 -ml-2 h-7 text-xs">
-                {expanded ? "Ocultar detalles" : "Ver detalles"}
-                <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${expanded ? "rotate-180" : ""}`} />
-              </Button>
+              <div className="flex items-center gap-2 mt-2">
+                <Button variant="ghost" size="sm" onClick={onToggle} className="-ml-2 h-7 text-xs">
+                  {expanded ? "Ocultar detalles" : "Ver detalles"}
+                  <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                </Button>
+                <Button variant="outline" size="sm" asChild className="h-7 text-xs">
+                  <a href={`/student/comparar-carreras?carrera=${carrera.id}`}>Comparar</a>
+                </Button>
+              </div>
             </div>
           </div>
           {expanded && (

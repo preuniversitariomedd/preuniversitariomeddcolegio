@@ -37,6 +37,7 @@ const StudentMensajes = lazy(() => import("./pages/student/Mensajes"));
 const StudentPerfil = lazy(() => import("./pages/student/Perfil"));
 const StudentOrientacion = lazy(() => import("./pages/student/OrientacionVocacional"));
 const StudentCompararCarreras = lazy(() => import("./pages/student/CompararCarreras"));
+const StudentMisPreferencias = lazy(() => import("./pages/student/MisPreferencias"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 export const APP_INFO = {
@@ -113,6 +114,7 @@ const App = () => (
                 <Route path="concentracion/stroop" element={<StudentStroop />} />
                 <Route path="orientacion-vocacional" element={<StudentOrientacion />} />
                 <Route path="comparar-carreras" element={<StudentCompararCarreras />} />
+                <Route path="mis-preferencias" element={<StudentMisPreferencias />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
