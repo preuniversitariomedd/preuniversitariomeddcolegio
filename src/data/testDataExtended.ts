@@ -3,15 +3,9 @@
 // © 2020-2026 PreUniversitario MEDD — Víctor Cañizares González
 // ============================================================
 
-// Tipos locales (independientes de testdata.ts para evitar conflictos)
+// Tipos locales permisivos (independientes de testdata.ts para evitar conflictos de casing)
 export interface QuestionOption { label: string; value: number; }
-export interface Test {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  categoria: string;
-  [key: string]: any;
-}
+export type Test = Record<string, any>;
 
 const acuerdo5: QuestionOption[] = [
   { label: "Totalmente en desacuerdo", value: 1 },
