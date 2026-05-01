@@ -55,6 +55,30 @@ export type Database = {
           },
         ]
       }
+      carreras_favoritas: {
+        Row: {
+          carrera_id: string
+          fecha: string
+          id: string
+          notas: string
+          user_id: string
+        }
+        Insert: {
+          carrera_id: string
+          fecha?: string
+          id?: string
+          notas?: string
+          user_id: string
+        }
+        Update: {
+          carrera_id?: string
+          fecha?: string
+          id?: string
+          notas?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       competencia_participantes: {
         Row: {
           competencia_id: string
@@ -566,6 +590,7 @@ export type Database = {
           id: string
           nombre: string
           password_changed: boolean | null
+          preferencias_carrera: Json
         }
         Insert: {
           apellidos: string
@@ -577,6 +602,7 @@ export type Database = {
           id: string
           nombre: string
           password_changed?: boolean | null
+          preferencias_carrera?: Json
         }
         Update: {
           apellidos?: string
@@ -588,6 +614,7 @@ export type Database = {
           id?: string
           nombre?: string
           password_changed?: boolean | null
+          preferencias_carrera?: Json
         }
         Relationships: []
       }
