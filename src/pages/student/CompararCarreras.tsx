@@ -537,6 +537,46 @@ export default function CompararCarreras() {
                         </div>
                       );
                     }} />
+                  <FilaTabla label="¿Por qué?" values={slots}
+                    render={(c) => {
+                      const desg = desgloseDe(c.id);
+                      const res = resumenDe(c.id);
+                      if (!desg || sinTests) return <span className="text-muted-foreground text-xs">—</span>;
+                      const colorNivel = (n: "alto" | "medio" | "bajo") =>
+                        n === "alto" ? "text-emerald-600 dark:text-emerald-400"
+                          : n === "medio" ? "text-amber-600 dark:text-amber-400"
+                            : "text-rose-600 dark:text-rose-400";
+                      return (
+                        <Collapsible>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                              <Info className="h-3 w-3 mr-1" /> Ver detalle <ChevronDown className="h-3 w-3 ml-1" />
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-2 space-y-2 min-w-[220px]">
+                            <p className="text-[11px] text-muted-foreground italic">{res}</p>
+                            <div className="space-y-1.5">
+                              {desg.map((d) => (
+                                <div key={d.key} className="text-[11px] space-y-0.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium">{d.label}</span>
+                                    <span className={`font-mono ${colorNivel(d.nivel)}`}>
+                                      {d.similitud}%
+                                    </span>
+                                  </div>
+                                  <Progress value={d.similitud} className="h-1" />
+                                  <div className="flex justify-between text-muted-foreground">
+                                    <span>Tú {d.tuPuntaje}% · Ideal {d.perfilIdeal}%</span>
+                                    <span>Aporte {d.aporte}/{d.peso}</span>
+                                  </div>
+                                  <p className="text-muted-foreground leading-snug">{d.explicacion}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      );
+                    }} />
                   <FilaTabla label="Estilos sugeridos" values={slots}
                     render={(c) => (c.estilosAprendizaje ?? []).length
                       ? (c.estilosAprendizaje ?? []).map((e) => (
