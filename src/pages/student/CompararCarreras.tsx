@@ -18,11 +18,14 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Plus, X, Columns3, ExternalLink, Heart, AlertCircle, Search,
+  Plus, X, Columns3, ExternalLink, Heart, AlertCircle, Search, FileDown, ChevronDown, Info,
 } from "lucide-react";
 import { CARRERAS_ESPOL, getCarreraById, type CarreraEspol } from "@/data/carrerasEspol";
-import { calcularCompatibilidad, normalizarPerfil } from "@/lib/compatibilidadVocacional";
+import { calcularCompatibilidad, normalizarPerfil, type DesgloseIndicador } from "@/lib/compatibilidadVocacional";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Slot = CarreraEspol | null;
 
@@ -155,19 +158,21 @@ export default function CompararCarreras() {
 
   const [slots, setSlots] = useState<[Slot, Slot, Slot]>([null, null, null]);
 
-  // Preselección por query param ?carrera=ID
+  // Preselección por query params (puede haber varios ?carrera=)
   useEffect(() => {
-    if (!carreraInicialId) return;
-    const c = getCarreraById(carreraInicialId);
-    if (c) {
-      setSlots((prev) => {
-        if (prev.some((s) => s?.id === c.id)) return prev;
-        const next = [...prev] as [Slot, Slot, Slot];
+    const ids = searchParams.getAll("carrera");
+    if (!ids.length) return;
+    setSlots((prev) => {
+      const next = [...prev] as [Slot, Slot, Slot];
+      ids.forEach((id) => {
+        const c = getCarreraById(id);
+        if (!c) return;
+        if (next.some((s) => s?.id === c.id)) return;
         const empty = next.findIndex((s) => s === null);
         if (empty >= 0) next[empty] = c;
-        return next;
       });
-    }
+      return next;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carreraInicialId]);
 
@@ -237,6 +242,12 @@ export default function CompararCarreras() {
   const compatibilidadDe = (id: string) =>
     ranking.find((r) => r.carrera.id === id)?.porcentaje ?? null;
 
+  const desgloseDe = (id: string): DesgloseIndicador[] | null =>
+    ranking.find((r) => r.carrera.id === id)?.desglose ?? null;
+
+  const resumenDe = (id: string): string | null =>
+    ranking.find((r) => r.carrera.id === id)?.resumen ?? null;
+
   const setSlot = (i: 0 | 1 | 2, c: Slot) => {
     setSlots((prev) => {
       const next = [...prev] as [Slot, Slot, Slot];
@@ -249,6 +260,129 @@ export default function CompararCarreras() {
   const algunaSeleccionada = slots.some(Boolean);
   const sinTests = testsUsados === 0;
 
+  // Guardado automático del historial (debounced) cuando hay >=1 carrera
+  useEffect(() => {
+    if (!user) return;
+    const ids = slots.filter(Boolean).map((c) => c!.id);
+    if (ids.length === 0) return;
+    const t = setTimeout(async () => {
+      await supabase.from("historial_comparaciones" as any).insert({
+        user_id: user.id,
+        carrera_ids: ids,
+      });
+      qc.invalidateQueries({ queryKey: ["historial-comparaciones", user.id] });
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots.map((s) => s?.id ?? "").join("|"), user?.id]);
+
+  // Exportar comparación a PDF
+  const exportarPDF = () => {
+    const seleccionadas = slots.filter(Boolean) as CarreraEspol[];
+    if (!seleccionadas.length) return;
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const fecha = new Date().toLocaleDateString("es-EC", { day: "2-digit", month: "long", year: "numeric" });
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Comparación de carreras", 14, 15);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(110);
+    doc.text(`PreUniversitario MEDD · Generado el ${fecha}`, 14, 21);
+    doc.setTextColor(0);
+
+    const headers = ["Indicador", ...seleccionadas.map((c) => c.nombre)];
+    const fila = (label: string, fn: (c: CarreraEspol) => string) =>
+      [label, ...seleccionadas.map(fn)];
+
+    const body: any[] = [
+      fila("Universidad", (c) => c.siglaUniversidad ?? "ESPOL"),
+      fila("Facultad", (c) => c.siglaFacultad),
+      fila("Ciudad", (c) => (c.ciudad ?? ["Guayaquil"]).join(", ")),
+      fila("Tipo", (c) => (c.tipoCosto === "privada" ? "Privada" : "Pública")),
+      fila("Modalidad", (c) => (c.modalidad ?? ["presencial"]).join(", ")),
+      fila("Duración", (c) => c.duracion ?? "—"),
+      fila("Salario promedio", (c) => c.salarioPromedioEcuador ?? "—"),
+      fila("Demanda laboral", (c) => c.demandaLaboral ?? "—"),
+      fila("Campo laboral", (c) => c.campoLaboral.slice(0, 4).join(" · ")),
+      fila("Materias clave", (c) => c.materiasClaveESPOL.join(", ")),
+      fila("Compatibilidad", (c) => {
+        const p = compatibilidadDe(c.id);
+        return p === null || sinTests ? "Tests pendientes" : `${p}%`;
+      }),
+      fila("Empatía requerida", (c) => `${c.perfilIdeal.empatia}%`),
+      fila("Conducta prosocial", (c) => `${c.perfilIdeal.prosocial}%`),
+      fila("Habilidades sociales", (c) => `${c.perfilIdeal.habilidadesSociales}%`),
+      fila("URL oficial", (c) => c.urlCarrera ?? "—"),
+    ];
+
+    autoTable(doc, {
+      head: [headers],
+      body,
+      startY: 26,
+      styles: { fontSize: 8, cellPadding: 2, valign: "top" },
+      headStyles: { fillColor: [88, 28, 135], textColor: 255 },
+      columnStyles: { 0: { fontStyle: "bold", fillColor: [245, 243, 255] } },
+      didDrawPage: (data) => {
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setFontSize(8);
+        doc.setTextColor(140);
+        doc.text(
+          "© 2020-2026 PreUniversitario MEDD — Víctor Cañizares González",
+          14, pageHeight - 8,
+        );
+      },
+    });
+
+    // Sección "¿Por qué esta compatibilidad?" si hay tests
+    if (!sinTests) {
+      let y = (doc as any).lastAutoTable.finalY + 8;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0);
+      doc.text("¿Por qué esta compatibilidad?", 14, y);
+      y += 4;
+
+      seleccionadas.forEach((c) => {
+        const desg = desgloseDe(c.id);
+        const res = resumenDe(c.id);
+        if (!desg) return;
+        if (y > 180) { doc.addPage(); y = 20; }
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text(c.nombre, 14, y + 5);
+        y += 7;
+        if (res) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(80);
+          const lines = doc.splitTextToSize(res, 260);
+          doc.text(lines, 14, y);
+          y += lines.length * 4;
+          doc.setTextColor(0);
+        }
+        autoTable(doc, {
+          startY: y,
+          head: [["Indicador", "Tu nivel", "Ideal", "Similitud", "Peso", "Aporte"]],
+          body: desg.map((d) => [
+            d.label, `${d.tuPuntaje}%`, `${d.perfilIdeal}%`,
+            `${d.similitud}%`, `${d.peso}%`, `${d.aporte}/${d.peso}`,
+          ]),
+          styles: { fontSize: 8, cellPadding: 1.5 },
+          headStyles: { fillColor: [148, 163, 184], textColor: 255 },
+          margin: { left: 14, right: 14 },
+        });
+        y = (doc as any).lastAutoTable.finalY + 5;
+      });
+    }
+
+    doc.save(`comparacion-carreras-${Date.now()}.pdf`);
+    toast({ title: "PDF generado", description: "La comparación se descargó correctamente." });
+  };
+
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <header className="flex items-start justify-between gap-3 flex-wrap">
@@ -259,11 +393,16 @@ export default function CompararCarreras() {
             <p className="text-sm text-muted-foreground">Compara hasta 3 carreras lado a lado.</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/student/mis-preferencias">
-            <Heart className="h-4 w-4 mr-1" /> Mis preferencias
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/student/mis-preferencias">
+              <Heart className="h-4 w-4 mr-1" /> Mis preferencias
+            </Link>
+          </Button>
+          <Button size="sm" onClick={exportarPDF} disabled={!algunaSeleccionada}>
+            <FileDown className="h-4 w-4 mr-1" /> Exportar PDF
+          </Button>
+        </div>
       </header>
 
       {sinTests && algunaSeleccionada && (
@@ -396,6 +535,46 @@ export default function CompararCarreras() {
                           </div>
                           <Progress value={pct} className="h-1.5" />
                         </div>
+                      );
+                    }} />
+                  <FilaTabla label="¿Por qué?" values={slots}
+                    render={(c) => {
+                      const desg = desgloseDe(c.id);
+                      const res = resumenDe(c.id);
+                      if (!desg || sinTests) return <span className="text-muted-foreground text-xs">—</span>;
+                      const colorNivel = (n: "alto" | "medio" | "bajo") =>
+                        n === "alto" ? "text-emerald-600 dark:text-emerald-400"
+                          : n === "medio" ? "text-amber-600 dark:text-amber-400"
+                            : "text-rose-600 dark:text-rose-400";
+                      return (
+                        <Collapsible>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                              <Info className="h-3 w-3 mr-1" /> Ver detalle <ChevronDown className="h-3 w-3 ml-1" />
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-2 space-y-2 min-w-[220px]">
+                            <p className="text-[11px] text-muted-foreground italic">{res}</p>
+                            <div className="space-y-1.5">
+                              {desg.map((d) => (
+                                <div key={d.key} className="text-[11px] space-y-0.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium">{d.label}</span>
+                                    <span className={`font-mono ${colorNivel(d.nivel)}`}>
+                                      {d.similitud}%
+                                    </span>
+                                  </div>
+                                  <Progress value={d.similitud} className="h-1" />
+                                  <div className="flex justify-between text-muted-foreground">
+                                    <span>Tú {d.tuPuntaje}% · Ideal {d.perfilIdeal}%</span>
+                                    <span>Aporte {d.aporte}/{d.peso}</span>
+                                  </div>
+                                  <p className="text-muted-foreground leading-snug">{d.explicacion}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       );
                     }} />
                   <FilaTabla label="Estilos sugeridos" values={slots}

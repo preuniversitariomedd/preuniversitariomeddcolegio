@@ -13,9 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, ExternalLink, Trash2, Save, Sparkles, Columns3, Compass } from "lucide-react";
+import { Heart, ExternalLink, Trash2, Save, Sparkles, Columns3, Compass, History, Check, Loader2 } from "lucide-react";
 import { CARRERAS_ESPOL, AREAS_CARRERA, getCarreraById, type AreaCarrera } from "@/data/carrerasEspol";
 import { calcularCompatibilidad, normalizarPerfil } from "@/lib/compatibilidadVocacional";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 type Preferencias = {
   ciudades: string[];
@@ -96,6 +98,7 @@ export default function MisPreferencias() {
     enabled: !!user,
   });
 
+  const [autosaveState, setAutosaveState] = useState<"idle" | "saving" | "saved">("idle");
   const guardarPrefs = useMutation({
     mutationFn: async (p: Preferencias) => {
       if (!user) throw new Error("No autenticado");
@@ -105,11 +108,52 @@ export default function MisPreferencias() {
         .eq("id", user.id);
       if (error) throw error;
     },
+    onMutate: () => setAutosaveState("saving"),
     onSuccess: () => {
-      toast({ title: "Preferencias guardadas" });
+      setAutosaveState("saved");
       qc.invalidateQueries({ queryKey: ["profile-prefs", user?.id] });
+      setTimeout(() => setAutosaveState("idle"), 1500);
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      setAutosaveState("idle");
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    },
+  });
+
+  // Auto-save con debounce: ignora la primera carga (cuando profile carga prefs en estado)
+  const [hidratado, setHidratado] = useState(false);
+  useEffect(() => {
+    if (profile && !hidratado) setHidratado(true);
+  }, [profile, hidratado]);
+  useEffect(() => {
+    if (!hidratado || !user) return;
+    const t = setTimeout(() => guardarPrefs.mutate(prefs), 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs, hidratado, user]);
+
+  // Historial de comparaciones
+  const { data: historial } = useQuery({
+    queryKey: ["historial-comparaciones", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("historial_comparaciones" as any)
+        .select("id, carrera_ids, fecha")
+        .eq("user_id", user!.id)
+        .order("fecha", { ascending: false })
+        .limit(15);
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+    enabled: !!user,
+  });
+
+  const eliminarHistorial = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("historial_comparaciones" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["historial-comparaciones", user?.id] }),
   });
 
   const guardarNota = useMutation({
@@ -267,10 +311,10 @@ export default function MisPreferencias() {
               ))}
             </div>
           </div>
-          <div className="pt-2 flex justify-end">
-            <Button onClick={() => guardarPrefs.mutate(prefs)} disabled={guardarPrefs.isPending}>
-              <Save className="h-4 w-4 mr-1" /> Guardar preferencias
-            </Button>
+          <div className="pt-2 flex items-center justify-end gap-2 text-xs text-muted-foreground">
+            {autosaveState === "saving" && (<><Loader2 className="h-3.5 w-3.5 animate-spin" /> Guardando…</>)}
+            {autosaveState === "saved" && (<><Check className="h-3.5 w-3.5 text-emerald-500" /> Guardado automáticamente</>)}
+            {autosaveState === "idle" && hidratado && (<span>Los cambios se guardan automáticamente.</span>)}
           </div>
         </CardContent>
       </Card>
@@ -396,6 +440,59 @@ export default function MisPreferencias() {
                       <Save className="h-3.5 w-3.5 mr-1" /> Guardar nota
                     </Button>
                   </div>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* HISTORIAL DE COMPARACIONES */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" /> Historial de comparaciones
+          </CardTitle>
+          <CardDescription>Reabre con un clic una comparación previa.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(historial?.length ?? 0) === 0 && (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Aún no has comparado carreras.
+            </p>
+          )}
+          {(historial ?? []).map((h: any) => {
+            const carreras = (h.carrera_ids as string[]).map((id) => getCarreraById(id)).filter(Boolean);
+            const url =
+              "/student/comparar-carreras?" +
+              (h.carrera_ids as string[]).map((id) => `carrera=${encodeURIComponent(id)}`).join("&");
+            return (
+              <div key={h.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-md border bg-card hover:bg-accent transition-colors">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="flex -space-x-1">
+                    {carreras.map((c: any) => (
+                      <span key={c.id} className="text-xl bg-background rounded-full border w-7 h-7 flex items-center justify-center"
+                        title={c.nombre}>{c.icono}</span>
+                    ))}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {carreras.map((c: any) => c.nombre).join(" · ")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(h.fecha), { addSuffix: true, locale: es })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to={url}><Columns3 className="h-3.5 w-3.5 mr-1" /> Reabrir</Link>
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-destructive"
+                    onClick={() => eliminarHistorial.mutate(h.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
             );

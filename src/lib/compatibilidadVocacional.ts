@@ -11,12 +11,27 @@ export interface PerfilEstudiante {
   habilidadesSociales: number; // 0-100
 }
 
+export interface DesgloseIndicador {
+  label: string;          // "Empatía"
+  key: "empatia" | "prosocial" | "habilidadesSociales";
+  tuPuntaje: number;      // 0-100
+  perfilIdeal: number;    // 0-100
+  similitud: number;      // 0-100
+  peso: number;           // % del total (35/30/35)
+  aporte: number;         // similitud * peso / 100  (puntos que aporta al %)
+  nivel: "alto" | "medio" | "bajo";
+  explicacion: string;
+}
+
 export interface ResultadoCompatibilidad {
   carrera: CarreraEspol;
   porcentaje: number;
   factoresPositivos: string[];
   factoresNeutros: string[];
   factoresADesarrollar: string[];
+  desglose: DesgloseIndicador[];
+  nivelGlobal: "alto" | "medio" | "bajo";
+  resumen: string;
 }
 
 // Puntajes máximos de cada test (según testdata.ts)
@@ -85,7 +100,59 @@ export function calcularCompatibilidad(
       clasificar(simProsocial, "Conducta prosocial");
       clasificar(simSocial, "Habilidades sociales");
 
-      return { carrera, porcentaje, factoresPositivos, factoresNeutros, factoresADesarrollar };
+      const nivelDe = (sim: number): "alto" | "medio" | "bajo" =>
+        sim >= 80 ? "alto" : sim >= 60 ? "medio" : "bajo";
+
+      const explicarIndicador = (
+        label: string, tu: number, ideal: number, sim: number,
+      ): string => {
+        const diff = tu - ideal;
+        if (sim >= 80) return `Tu nivel de ${label.toLowerCase()} (${tu}%) coincide con lo que esta carrera requiere (${ideal}%).`;
+        if (sim >= 60) return `Tu ${label.toLowerCase()} (${tu}%) está cerca del ideal (${ideal}%); con práctica te alineas bien.`;
+        return diff < 0
+          ? `Tu ${label.toLowerCase()} (${tu}%) está por debajo de lo que la carrera demanda (${ideal}%). Es un área a desarrollar.`
+          : `Tu ${label.toLowerCase()} (${tu}%) supera lo típico de la carrera (${ideal}%); puede que no aproveches todo tu potencial.`;
+      };
+
+      const desglose: DesgloseIndicador[] = [
+        {
+          label: "Empatía", key: "empatia", tuPuntaje: perfil.empatia, perfilIdeal: ideal.empatia,
+          similitud: Math.round(simEmpatia), peso: PESOS.empatia,
+          aporte: Math.round((simEmpatia * PESOS.empatia) / 100),
+          nivel: nivelDe(simEmpatia),
+          explicacion: explicarIndicador("Empatía", perfil.empatia, ideal.empatia, simEmpatia),
+        },
+        {
+          label: "Conducta prosocial", key: "prosocial", tuPuntaje: perfil.prosocial, perfilIdeal: ideal.prosocial,
+          similitud: Math.round(simProsocial), peso: PESOS.prosocial,
+          aporte: Math.round((simProsocial * PESOS.prosocial) / 100),
+          nivel: nivelDe(simProsocial),
+          explicacion: explicarIndicador("Conducta prosocial", perfil.prosocial, ideal.prosocial, simProsocial),
+        },
+        {
+          label: "Habilidades sociales", key: "habilidadesSociales", tuPuntaje: perfil.habilidadesSociales,
+          perfilIdeal: ideal.habilidadesSociales, similitud: Math.round(simSocial), peso: PESOS.habilidadesSociales,
+          aporte: Math.round((simSocial * PESOS.habilidadesSociales) / 100),
+          nivel: nivelDe(simSocial),
+          explicacion: explicarIndicador("Habilidades sociales", perfil.habilidadesSociales, ideal.habilidadesSociales, simSocial),
+        },
+      ];
+
+      const nivelGlobal: "alto" | "medio" | "bajo" =
+        porcentaje >= 80 ? "alto" : porcentaje >= 60 ? "medio" : "bajo";
+
+      const resumen =
+        nivelGlobal === "alto"
+          ? `Compatibilidad alta (${porcentaje}%): tu perfil psicológico encaja muy bien con esta carrera.`
+          : nivelGlobal === "medio"
+            ? `Compatibilidad media (${porcentaje}%): hay buena base pero conviene fortalecer ${factoresADesarrollar.join(", ").toLowerCase() || "algunos aspectos"}.`
+            : `Compatibilidad baja (${porcentaje}%): tu perfil actual difiere del ideal en ${factoresADesarrollar.join(", ").toLowerCase() || "varios indicadores"}.`;
+
+      return {
+        carrera, porcentaje, factoresPositivos, factoresNeutros, factoresADesarrollar,
+        desglose, nivelGlobal, resumen,
+      };
     })
     .sort((a, b) => b.porcentaje - a.porcentaje);
 }
+
