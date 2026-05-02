@@ -395,6 +395,27 @@ export type Database = {
         }
         Relationships: []
       }
+      historial_comparaciones: {
+        Row: {
+          carrera_ids: string[]
+          fecha: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          carrera_ids: string[]
+          fecha?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          carrera_ids?: string[]
+          fecha?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       inscripciones: {
         Row: {
           created_at: string | null
