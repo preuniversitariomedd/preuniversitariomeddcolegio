@@ -13,9 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, ExternalLink, Trash2, Save, Sparkles, Columns3, Compass } from "lucide-react";
+import { Heart, ExternalLink, Trash2, Save, Sparkles, Columns3, Compass, History, Check, Loader2 } from "lucide-react";
 import { CARRERAS_ESPOL, AREAS_CARRERA, getCarreraById, type AreaCarrera } from "@/data/carrerasEspol";
 import { calcularCompatibilidad, normalizarPerfil } from "@/lib/compatibilidadVocacional";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 type Preferencias = {
   ciudades: string[];
