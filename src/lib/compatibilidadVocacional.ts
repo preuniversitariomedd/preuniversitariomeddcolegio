@@ -11,12 +11,27 @@ export interface PerfilEstudiante {
   habilidadesSociales: number; // 0-100
 }
 
+export interface DesgloseIndicador {
+  label: string;          // "Empatía"
+  key: "empatia" | "prosocial" | "habilidadesSociales";
+  tuPuntaje: number;      // 0-100
+  perfilIdeal: number;    // 0-100
+  similitud: number;      // 0-100
+  peso: number;           // % del total (35/30/35)
+  aporte: number;         // similitud * peso / 100  (puntos que aporta al %)
+  nivel: "alto" | "medio" | "bajo";
+  explicacion: string;
+}
+
 export interface ResultadoCompatibilidad {
   carrera: CarreraEspol;
   porcentaje: number;
   factoresPositivos: string[];
   factoresNeutros: string[];
   factoresADesarrollar: string[];
+  desglose: DesgloseIndicador[];
+  nivelGlobal: "alto" | "medio" | "bajo";
+  resumen: string;
 }
 
 // Puntajes máximos de cada test (según testdata.ts)
