@@ -98,6 +98,7 @@ export default function MisPreferencias() {
     enabled: !!user,
   });
 
+  const [autosaveState, setAutosaveState] = useState<"idle" | "saving" | "saved">("idle");
   const guardarPrefs = useMutation({
     mutationFn: async (p: Preferencias) => {
       if (!user) throw new Error("No autenticado");
@@ -107,11 +108,52 @@ export default function MisPreferencias() {
         .eq("id", user.id);
       if (error) throw error;
     },
+    onMutate: () => setAutosaveState("saving"),
     onSuccess: () => {
-      toast({ title: "Preferencias guardadas" });
+      setAutosaveState("saved");
       qc.invalidateQueries({ queryKey: ["profile-prefs", user?.id] });
+      setTimeout(() => setAutosaveState("idle"), 1500);
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      setAutosaveState("idle");
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    },
+  });
+
+  // Auto-save con debounce: ignora la primera carga (cuando profile carga prefs en estado)
+  const [hidratado, setHidratado] = useState(false);
+  useEffect(() => {
+    if (profile && !hidratado) setHidratado(true);
+  }, [profile, hidratado]);
+  useEffect(() => {
+    if (!hidratado || !user) return;
+    const t = setTimeout(() => guardarPrefs.mutate(prefs), 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs, hidratado, user]);
+
+  // Historial de comparaciones
+  const { data: historial } = useQuery({
+    queryKey: ["historial-comparaciones", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("historial_comparaciones" as any)
+        .select("id, carrera_ids, fecha")
+        .eq("user_id", user!.id)
+        .order("fecha", { ascending: false })
+        .limit(15);
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+    enabled: !!user,
+  });
+
+  const eliminarHistorial = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("historial_comparaciones" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["historial-comparaciones", user?.id] }),
   });
 
   const guardarNota = useMutation({
