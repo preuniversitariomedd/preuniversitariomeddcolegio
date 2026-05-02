@@ -242,6 +242,12 @@ export default function CompararCarreras() {
   const compatibilidadDe = (id: string) =>
     ranking.find((r) => r.carrera.id === id)?.porcentaje ?? null;
 
+  const desgloseDe = (id: string): DesgloseIndicador[] | null =>
+    ranking.find((r) => r.carrera.id === id)?.desglose ?? null;
+
+  const resumenDe = (id: string): string | null =>
+    ranking.find((r) => r.carrera.id === id)?.resumen ?? null;
+
   const setSlot = (i: 0 | 1 | 2, c: Slot) => {
     setSlots((prev) => {
       const next = [...prev] as [Slot, Slot, Slot];
@@ -253,6 +259,129 @@ export default function CompararCarreras() {
   const excluded = slots.filter(Boolean).map((c) => c!.id);
   const algunaSeleccionada = slots.some(Boolean);
   const sinTests = testsUsados === 0;
+
+  // Guardado automático del historial (debounced) cuando hay >=1 carrera
+  useEffect(() => {
+    if (!user) return;
+    const ids = slots.filter(Boolean).map((c) => c!.id);
+    if (ids.length === 0) return;
+    const t = setTimeout(async () => {
+      await supabase.from("historial_comparaciones" as any).insert({
+        user_id: user.id,
+        carrera_ids: ids,
+      });
+      qc.invalidateQueries({ queryKey: ["historial-comparaciones", user.id] });
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots.map((s) => s?.id ?? "").join("|"), user?.id]);
+
+  // Exportar comparación a PDF
+  const exportarPDF = () => {
+    const seleccionadas = slots.filter(Boolean) as CarreraEspol[];
+    if (!seleccionadas.length) return;
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const fecha = new Date().toLocaleDateString("es-EC", { day: "2-digit", month: "long", year: "numeric" });
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Comparación de carreras", 14, 15);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(110);
+    doc.text(`PreUniversitario MEDD · Generado el ${fecha}`, 14, 21);
+    doc.setTextColor(0);
+
+    const headers = ["Indicador", ...seleccionadas.map((c) => c.nombre)];
+    const fila = (label: string, fn: (c: CarreraEspol) => string) =>
+      [label, ...seleccionadas.map(fn)];
+
+    const body: any[] = [
+      fila("Universidad", (c) => c.siglaUniversidad ?? "ESPOL"),
+      fila("Facultad", (c) => c.siglaFacultad),
+      fila("Ciudad", (c) => (c.ciudad ?? ["Guayaquil"]).join(", ")),
+      fila("Tipo", (c) => (c.tipoCosto === "privada" ? "Privada" : "Pública")),
+      fila("Modalidad", (c) => (c.modalidad ?? ["presencial"]).join(", ")),
+      fila("Duración", (c) => c.duracion ?? "—"),
+      fila("Salario promedio", (c) => c.salarioPromedioEcuador ?? "—"),
+      fila("Demanda laboral", (c) => c.demandaLaboral ?? "—"),
+      fila("Campo laboral", (c) => c.campoLaboral.slice(0, 4).join(" · ")),
+      fila("Materias clave", (c) => c.materiasClaveESPOL.join(", ")),
+      fila("Compatibilidad", (c) => {
+        const p = compatibilidadDe(c.id);
+        return p === null || sinTests ? "Tests pendientes" : `${p}%`;
+      }),
+      fila("Empatía requerida", (c) => `${c.perfilIdeal.empatia}%`),
+      fila("Conducta prosocial", (c) => `${c.perfilIdeal.prosocial}%`),
+      fila("Habilidades sociales", (c) => `${c.perfilIdeal.habilidadesSociales}%`),
+      fila("URL oficial", (c) => c.urlCarrera ?? "—"),
+    ];
+
+    autoTable(doc, {
+      head: [headers],
+      body,
+      startY: 26,
+      styles: { fontSize: 8, cellPadding: 2, valign: "top" },
+      headStyles: { fillColor: [88, 28, 135], textColor: 255 },
+      columnStyles: { 0: { fontStyle: "bold", fillColor: [245, 243, 255] } },
+      didDrawPage: (data) => {
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setFontSize(8);
+        doc.setTextColor(140);
+        doc.text(
+          "© 2020-2026 PreUniversitario MEDD — Víctor Cañizares González",
+          14, pageHeight - 8,
+        );
+      },
+    });
+
+    // Sección "¿Por qué esta compatibilidad?" si hay tests
+    if (!sinTests) {
+      let y = (doc as any).lastAutoTable.finalY + 8;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0);
+      doc.text("¿Por qué esta compatibilidad?", 14, y);
+      y += 4;
+
+      seleccionadas.forEach((c) => {
+        const desg = desgloseDe(c.id);
+        const res = resumenDe(c.id);
+        if (!desg) return;
+        if (y > 180) { doc.addPage(); y = 20; }
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text(c.nombre, 14, y + 5);
+        y += 7;
+        if (res) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(80);
+          const lines = doc.splitTextToSize(res, 260);
+          doc.text(lines, 14, y);
+          y += lines.length * 4;
+          doc.setTextColor(0);
+        }
+        autoTable(doc, {
+          startY: y,
+          head: [["Indicador", "Tu nivel", "Ideal", "Similitud", "Peso", "Aporte"]],
+          body: desg.map((d) => [
+            d.label, `${d.tuPuntaje}%`, `${d.perfilIdeal}%`,
+            `${d.similitud}%`, `${d.peso}%`, `${d.aporte}/${d.peso}`,
+          ]),
+          styles: { fontSize: 8, cellPadding: 1.5 },
+          headStyles: { fillColor: [148, 163, 184], textColor: 255 },
+          margin: { left: 14, right: 14 },
+        });
+        y = (doc as any).lastAutoTable.finalY + 5;
+      });
+    }
+
+    doc.save(`comparacion-carreras-${Date.now()}.pdf`);
+    toast({ title: "PDF generado", description: "La comparación se descargó correctamente." });
+  };
+
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
