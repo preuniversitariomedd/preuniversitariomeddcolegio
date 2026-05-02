@@ -446,6 +446,59 @@ export default function MisPreferencias() {
           })}
         </CardContent>
       </Card>
+
+      {/* HISTORIAL DE COMPARACIONES */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" /> Historial de comparaciones
+          </CardTitle>
+          <CardDescription>Reabre con un clic una comparación previa.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(historial?.length ?? 0) === 0 && (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Aún no has comparado carreras.
+            </p>
+          )}
+          {(historial ?? []).map((h: any) => {
+            const carreras = (h.carrera_ids as string[]).map((id) => getCarreraById(id)).filter(Boolean);
+            const url =
+              "/student/comparar-carreras?" +
+              (h.carrera_ids as string[]).map((id) => `carrera=${encodeURIComponent(id)}`).join("&");
+            return (
+              <div key={h.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-md border bg-card hover:bg-accent transition-colors">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="flex -space-x-1">
+                    {carreras.map((c: any) => (
+                      <span key={c.id} className="text-xl bg-background rounded-full border w-7 h-7 flex items-center justify-center"
+                        title={c.nombre}>{c.icono}</span>
+                    ))}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {carreras.map((c: any) => c.nombre).join(" · ")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(h.fecha), { addSuffix: true, locale: es })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to={url}><Columns3 className="h-3.5 w-3.5 mr-1" /> Reabrir</Link>
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-destructive"
+                    onClick={() => eliminarHistorial.mutate(h.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
     </div>
   );
 }
