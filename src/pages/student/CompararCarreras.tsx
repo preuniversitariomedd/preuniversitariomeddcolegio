@@ -158,19 +158,21 @@ export default function CompararCarreras() {
 
   const [slots, setSlots] = useState<[Slot, Slot, Slot]>([null, null, null]);
 
-  // Preselección por query param ?carrera=ID
+  // Preselección por query params (puede haber varios ?carrera=)
   useEffect(() => {
-    if (!carreraInicialId) return;
-    const c = getCarreraById(carreraInicialId);
-    if (c) {
-      setSlots((prev) => {
-        if (prev.some((s) => s?.id === c.id)) return prev;
-        const next = [...prev] as [Slot, Slot, Slot];
+    const ids = searchParams.getAll("carrera");
+    if (!ids.length) return;
+    setSlots((prev) => {
+      const next = [...prev] as [Slot, Slot, Slot];
+      ids.forEach((id) => {
+        const c = getCarreraById(id);
+        if (!c) return;
+        if (next.some((s) => s?.id === c.id)) return;
         const empty = next.findIndex((s) => s === null);
         if (empty >= 0) next[empty] = c;
-        return next;
       });
-    }
+      return next;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carreraInicialId]);
 
