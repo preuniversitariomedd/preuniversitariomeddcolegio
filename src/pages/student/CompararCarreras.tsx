@@ -393,11 +393,16 @@ export default function CompararCarreras() {
             <p className="text-sm text-muted-foreground">Compara hasta 3 carreras lado a lado.</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/student/mis-preferencias">
-            <Heart className="h-4 w-4 mr-1" /> Mis preferencias
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/student/mis-preferencias">
+              <Heart className="h-4 w-4 mr-1" /> Mis preferencias
+            </Link>
+          </Button>
+          <Button size="sm" onClick={exportarPDF} disabled={!algunaSeleccionada}>
+            <FileDown className="h-4 w-4 mr-1" /> Exportar PDF
+          </Button>
+        </div>
       </header>
 
       {sinTests && algunaSeleccionada && (
