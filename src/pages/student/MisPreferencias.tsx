@@ -311,10 +311,10 @@ export default function MisPreferencias() {
               ))}
             </div>
           </div>
-          <div className="pt-2 flex justify-end">
-            <Button onClick={() => guardarPrefs.mutate(prefs)} disabled={guardarPrefs.isPending}>
-              <Save className="h-4 w-4 mr-1" /> Guardar preferencias
-            </Button>
+          <div className="pt-2 flex items-center justify-end gap-2 text-xs text-muted-foreground">
+            {autosaveState === "saving" && (<><Loader2 className="h-3.5 w-3.5 animate-spin" /> Guardando…</>)}
+            {autosaveState === "saved" && (<><Check className="h-3.5 w-3.5 text-emerald-500" /> Guardado automáticamente</>)}
+            {autosaveState === "idle" && hidratado && (<span>Los cambios se guardan automáticamente.</span>)}
           </div>
         </CardContent>
       </Card>
