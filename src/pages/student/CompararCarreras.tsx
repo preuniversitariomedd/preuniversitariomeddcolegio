@@ -18,11 +18,14 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Plus, X, Columns3, ExternalLink, Heart, AlertCircle, Search,
+  Plus, X, Columns3, ExternalLink, Heart, AlertCircle, Search, FileDown, ChevronDown, Info,
 } from "lucide-react";
 import { CARRERAS_ESPOL, getCarreraById, type CarreraEspol } from "@/data/carrerasEspol";
-import { calcularCompatibilidad, normalizarPerfil } from "@/lib/compatibilidadVocacional";
+import { calcularCompatibilidad, normalizarPerfil, type DesgloseIndicador } from "@/lib/compatibilidadVocacional";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Slot = CarreraEspol | null;
 
