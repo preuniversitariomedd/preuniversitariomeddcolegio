@@ -492,6 +492,7 @@ const PROSOCIAL: TestPsicometrico = {
 // ============================================================
 
 import { BANCO_24_TESTS, type TestExtendido } from "./banco24";
+import { BANCO_EXTRA_TESTS } from "./banco24Extra";
 
 const TESTS_BASE: TestPsicometrico[] = [
   ROSENBERG,
