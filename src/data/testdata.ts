@@ -506,9 +506,11 @@ const TESTS_BASE: TestPsicometrico[] = [
 ];
 
 /** Banco completo: 8 psicométricos + 24 (vocacionales/personalidad/inteligencias) */
+/** Banco completo: 8 psicométricos clásicos + 24 ampliados + 4 complementarios */
 export const TESTS: (TestPsicometrico | TestExtendido)[] = [
   ...TESTS_BASE,
   ...BANCO_24_TESTS,
+  ...BANCO_EXTRA_TESTS,
 ];
 
 export type CategoriaTest = "psicometria" | "vocacional" | "personalidad" | "inteligencias";
