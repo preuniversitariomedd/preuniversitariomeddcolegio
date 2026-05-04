@@ -64,6 +64,25 @@ export default function StudentPsicometriaTest() {
   };
 
   if (resultado) {
+    const t: any = test;
+    const opVals = test.opciones.map((o) => o.valor);
+    const maxOp = Math.max(...opVals);
+    const minOp = Math.min(...opVals);
+    const subList = (t.subescalas ?? []) as { id: string; nombre: string }[];
+    const subInterps: Record<string, { pct: number; nivel: "bajo" | "medio" | "alto"; texto: string }> = {};
+    if (resultado.puntaje_por_subescala) {
+      for (const s of subList) {
+        const items = test.preguntas.filter((p: any) => p.subescala === s.id);
+        if (!items.length) continue;
+        const max = items.length * maxOp;
+        const min = items.length * minOp;
+        const raw = resultado.puntaje_por_subescala[s.id] ?? 0;
+        const pct = max === min ? 0 : Math.round(((raw - min) / (max - min)) * 100);
+        const nivel = pct < 40 ? "bajo" : pct <= 70 ? "medio" : "alto";
+        const texto = nivel === "alto" ? "Fortaleza marcada en esta dimensión." : nivel === "medio" ? "Nivel funcional con espacio para crecer." : "Área a fortalecer con apoyo psicopedagógico.";
+        subInterps[s.id] = { pct, nivel, texto };
+      }
+    }
     return (
       <div className="max-w-2xl mx-auto">
         <Card>
@@ -76,19 +95,43 @@ export default function StudentPsicometriaTest() {
             <div className="text-center py-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">Puntaje total</p>
               <p className="text-4xl font-bold text-primary">{resultado.puntaje_total}</p>
-              <p className="text-sm font-medium mt-1 capitalize">Nivel: {resultado.interpretacion}</p>
+              <p className="text-sm font-medium mt-1 capitalize">Nivel global: {resultado.interpretacion}</p>
             </div>
-            {resultado.puntaje_por_subescala && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Por subescala:</p>
-                {Object.entries(resultado.puntaje_por_subescala).map(([k, v]) => (
-                  <div key={k} className="flex justify-between text-sm border-b pb-1">
-                    <span className="capitalize">{k}</span>
-                    <span className="font-mono">{v}</span>
-                  </div>
-                ))}
+            {subList.length > 0 && Object.keys(subInterps).length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Desglose por subescala:</p>
+                {subList.map((s) => {
+                  const info = subInterps[s.id];
+                  if (!info) return null;
+                  const color = info.nivel === "alto" ? "bg-green-500" : info.nivel === "medio" ? "bg-amber-500" : "bg-red-500";
+                  return (
+                    <div key={s.id} className="border rounded-md p-3 space-y-1.5">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="font-medium">{s.nombre}</span>
+                        <span className="text-xs uppercase font-semibold">{info.nivel} · {info.pct}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className={`h-full ${color}`} style={{ width: `${info.pct}%` }} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">{info.texto}</p>
+                    </div>
+                  );
+                })}
               </div>
             )}
+            <p className="text-sm leading-relaxed bg-accent/30 p-3 rounded-md">
+              {test.interpretacion[resultado.interpretacion]}
+            </p>
+            <div className="flex justify-end">
+              <Button asChild>
+                <Link to="/student/psicometria">Volver a tests</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
             <p className="text-sm leading-relaxed bg-accent/30 p-3 rounded-md">
               {test.interpretacion[resultado.interpretacion]}
             </p>
