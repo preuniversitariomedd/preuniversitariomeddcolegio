@@ -326,6 +326,35 @@ export function construirPerfil360(
   const cd = ultPorTest.get("cd-risc");
   if (cd?.puntaje_total && cd.puntaje_total <= 30) alertas.push({ tipo: "resiliencia", nivel: "baja", mensaje: "Resiliencia baja. Trabajar mindset de crecimiento y técnicas de afrontamiento activo." });
 
+  // ── Dimensiones complementarias (4 nuevas pruebas) ──
+  const dimensionesComplementarias: Perfil360["dimensionesComplementarias"] = ID_DIMENSIONES_EXTRA.map((tid) => {
+    const test: any = getTestById(tid);
+    if (!test) return null as any;
+    const subs = subescalas.filter((s) => s.testId === tid);
+    const completado = subs.length > 0;
+    const promedio = completado ? Math.round(subs.reduce((a, s) => a + s.porcentaje, 0) / subs.length) : 0;
+    const nivelGlobal = completado ? nivelDePorcentaje(promedio) : null;
+    return {
+      testId: tid,
+      testNombre: test.nombre,
+      icono: test.icono,
+      completado,
+      nivelGlobal,
+      promedio,
+      subescalas: subs.map((s) => {
+        const nivel = nivelDePorcentaje(s.porcentaje);
+        const textos = NIVEL_TEXTOS[s.subescalaId];
+        return {
+          id: s.subescalaId,
+          nombre: s.subescalaNombre,
+          porcentaje: s.porcentaje,
+          nivel,
+          interpretacion: textos?.[nivel] ?? `Nivel ${nivel} en ${s.subescalaNombre}.`,
+        };
+      }),
+    };
+  }).filter(Boolean) as Perfil360["dimensionesComplementarias"];
+
   return {
     testsCompletados: ultPorTest.size,
     porcentajeCompletitud: Math.round((ultPorTest.size / Math.max(totalTests, 1)) * 100),
@@ -337,5 +366,6 @@ export function construirPerfil360(
     vocacional,
     adaptaciones,
     alertas,
+    dimensionesComplementarias,
   };
 }
