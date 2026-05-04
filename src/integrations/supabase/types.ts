@@ -954,6 +954,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      buscar_competencia_por_codigo: {
+        Args: { _codigo: string }
+        Returns: {
+          codigo: string
+          estado: string
+          id: string
+          titulo: string
+        }[]
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_enrolled: {
         Args: { _curso_id: string; _user_id: string }
