@@ -53,6 +53,53 @@ export interface Perfil360 {
   /** Recomendaciones puntuales DUA generadas localmente */
   adaptaciones: { titulo: string; descripcion: string; prioridad: "alta" | "media" | "baja" }[];
   alertas: { tipo: "ansiedad" | "autoestima" | "procrastinacion" | "resiliencia"; nivel: string; mensaje: string }[];
+  /** Dimensiones complementarias: edad mental, decisiones bajo presión, visión de vida, modificación de conducta */
+  dimensionesComplementarias: {
+    testId: string;
+    testNombre: string;
+    icono?: string;
+    completado: boolean;
+    nivelGlobal: "bajo" | "medio" | "alto" | null;
+    promedio: number;
+    subescalas: {
+      id: string;
+      nombre: string;
+      porcentaje: number;
+      nivel: "bajo" | "medio" | "alto";
+      interpretacion: string;
+    }[];
+  }[];
+}
+
+const NIVEL_TEXTOS: Record<string, { bajo: string; medio: string; alto: string }> = {
+  ME: { bajo: "Aún identificas y regulas emociones de forma irregular.", medio: "Reconoces y manejas emociones con esfuerzo consciente.", alto: "Madurez emocional consolidada: identificas, expresas y regulas con soltura." },
+  MC: { bajo: "Predomina pensamiento concreto e inmediato.", medio: "Combinas razonamiento abstracto con apoyo de lo concreto.", alto: "Pensamiento abstracto, planificador y consecuencial bien desarrollado." },
+  MS: { bajo: "Aún ajustas tu comportamiento social a contextos nuevos.", medio: "Lees contextos sociales con razonable claridad.", alto: "Madurez social adulta: lees contextos y sostienes relaciones de calidad." },
+  AU: { bajo: "Dependes de figuras externas para decisiones cotidianas.", medio: "Gestionas tu vida con autonomía moderada.", alto: "Alta autonomía personal y autogestión." },
+  RE: { bajo: "Cuesta sostener compromisos y consecuencias.", medio: "Cumples responsabilidades con recordatorios y apoyo.", alto: "Asumes y sostienes responsabilidades con consistencia." },
+  RP: { bajo: "Tiendes a paralizarte o postergar la decisión.", medio: "Decides con cierta agilidad cuando es necesario.", alto: "Decides con rapidez funcional sin bloquearte." },
+  TE: { bajo: "El estrés agudo afecta tu juicio.", medio: "Mantienes claridad bajo presión moderada.", alto: "Operas con claridad incluso bajo estrés alto." },
+  AR: { bajo: "Decides más por impulso que por análisis.", medio: "Evalúas pros/contras cuando hay tiempo.", alto: "Análisis racional sólido y consistente." },
+  IN: { bajo: "Desconfías de tu intuición o no la consultas.", medio: "Usas intuición ocasionalmente con criterio.", alto: "Intuición calibrada por la experiencia." },
+  RC: { bajo: "Los errores te detienen por largos periodos.", medio: "Te recuperas con tiempo y apoyo.", alto: "Aprendes y vuelves a actuar rápidamente tras errar." },
+  PR: { bajo: "Aún buscas un sentido claro para tu vida.", medio: "Tienes un propósito en construcción.", alto: "Propósito personal claro y motivador." },
+  ML: { bajo: "Te cuesta proyectarte a largo plazo.", medio: "Defines metas a mediano plazo.", alto: "Visualizas y planificas metas de largo alcance." },
+  VC: { bajo: "Tus valores aún no están firmes ante la presión.", medio: "Tienes valores que sostienes en muchos contextos.", alto: "Valores centrales firmes que guían tus elecciones." },
+  OF: { bajo: "Predomina visión pesimista o evitativa.", medio: "Optimismo intermitente.", alto: "Optimismo realista y sostenido." },
+  ST: { bajo: "Aún no conectas con un sentido mayor.", medio: "Reconoces parcialmente algo más grande que tú.", alto: "Sentido de trascendencia integrado a tu vida." },
+  AC: { bajo: "Cuesta verte sin filtros defensivos.", medio: "Reconoces patrones propios con apoyo.", alto: "Autoconciencia conductual bien desarrollada." },
+  CO: { bajo: "Los impulsos suelen ganarle a la meta.", medio: "Autocontrol funcional con esfuerzo.", alto: "Alto autocontrol y elección consciente." },
+  HP: { bajo: "Cuesta instalar hábitos sostenibles.", medio: "Construyes hábitos con apoyo y recordatorios.", alto: "Construyes hábitos que se sostienen solos." },
+  FL: { bajo: "Tiendes a repetir estrategias aunque no funcionen.", medio: "Cambias de estrategia cuando hay evidencia clara.", alto: "Alta flexibilidad conductual." },
+  PE: { bajo: "Las recaídas suelen abandonar el cambio.", medio: "Persistes con altibajos.", alto: "Persistes en el cambio aun ante recaídas." },
+};
+
+const ID_DIMENSIONES_EXTRA = ["edad-mental", "decisiones-presion", "vision-vida", "modificacion-conducta"];
+
+function nivelDePorcentaje(p: number): "bajo" | "medio" | "alto" {
+  if (p < 40) return "bajo";
+  if (p <= 70) return "medio";
+  return "alto";
 }
 
 // ────────────────────────────────────────────────────────────
@@ -279,6 +326,35 @@ export function construirPerfil360(
   const cd = ultPorTest.get("cd-risc");
   if (cd?.puntaje_total && cd.puntaje_total <= 30) alertas.push({ tipo: "resiliencia", nivel: "baja", mensaje: "Resiliencia baja. Trabajar mindset de crecimiento y técnicas de afrontamiento activo." });
 
+  // ── Dimensiones complementarias (4 nuevas pruebas) ──
+  const dimensionesComplementarias: Perfil360["dimensionesComplementarias"] = ID_DIMENSIONES_EXTRA.map((tid) => {
+    const test: any = getTestById(tid);
+    if (!test) return null as any;
+    const subs = subescalas.filter((s) => s.testId === tid);
+    const completado = subs.length > 0;
+    const promedio = completado ? Math.round(subs.reduce((a, s) => a + s.porcentaje, 0) / subs.length) : 0;
+    const nivelGlobal = completado ? nivelDePorcentaje(promedio) : null;
+    return {
+      testId: tid,
+      testNombre: test.nombre,
+      icono: test.icono,
+      completado,
+      nivelGlobal,
+      promedio,
+      subescalas: subs.map((s) => {
+        const nivel = nivelDePorcentaje(s.porcentaje);
+        const textos = NIVEL_TEXTOS[s.subescalaId];
+        return {
+          id: s.subescalaId,
+          nombre: s.subescalaNombre,
+          porcentaje: s.porcentaje,
+          nivel,
+          interpretacion: textos?.[nivel] ?? `Nivel ${nivel} en ${s.subescalaNombre}.`,
+        };
+      }),
+    };
+  }).filter(Boolean) as Perfil360["dimensionesComplementarias"];
+
   return {
     testsCompletados: ultPorTest.size,
     porcentajeCompletitud: Math.round((ultPorTest.size / Math.max(totalTests, 1)) * 100),
@@ -290,5 +366,6 @@ export function construirPerfil360(
     vocacional,
     adaptaciones,
     alertas,
+    dimensionesComplementarias,
   };
 }
