@@ -132,19 +132,8 @@ export default function StudentPsicometriaTest() {
       </div>
     );
   }
-            <p className="text-sm leading-relaxed bg-accent/30 p-3 rounded-md">
-              {test.interpretacion[resultado.interpretacion]}
-            </p>
-            <div className="flex justify-end">
-              <Button asChild>
-                <Link to="/student/psicometria">Volver a tests</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
+
 
   if (idx === 0 && respondidas === 0) {
     return (
