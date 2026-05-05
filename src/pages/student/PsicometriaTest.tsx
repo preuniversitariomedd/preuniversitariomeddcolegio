@@ -74,7 +74,9 @@ export default function StudentPsicometriaTest() {
     const maxOp = Math.max(...opVals);
     const minOp = Math.min(...opVals);
     const subList = (t.subescalas ?? []) as { id: string; nombre: string }[];
-    const subInterps: Record<string, { pct: number; nivel: "bajo" | "medio" | "alto"; texto: string }> = {};
+    type SubInfo = { pct: number; nivel: Nivel; texto: string; faltaMapeo: boolean };
+    const subInterps: Record<string, SubInfo> = {};
+    const faltantes: string[] = [];
     if (resultado.puntaje_por_subescala) {
       for (const s of subList) {
         const items = test.preguntas.filter((p: any) => p.subescala === s.id);
@@ -83,19 +85,89 @@ export default function StudentPsicometriaTest() {
         const min = items.length * minOp;
         const raw = resultado.puntaje_por_subescala[s.id] ?? 0;
         const pct = max === min ? 0 : Math.round(((raw - min) / (max - min)) * 100);
-        const nivel = pct < 40 ? "bajo" : pct <= 70 ? "medio" : "alto";
+        const nivel: Nivel = pct < 40 ? "bajo" : pct <= 70 ? "medio" : "alto";
         const textos = NIVEL_TEXTOS[s.id];
-        const fallback = nivel === "alto" ? `Fortaleza marcada en ${s.nombre}.` : nivel === "medio" ? `Nivel funcional en ${s.nombre}, con espacio para crecer.` : `${s.nombre}: área a fortalecer con apoyo psicopedagógico.`;
+        const faltaMapeo = !textos;
+        if (faltaMapeo) faltantes.push(`${s.nombre} (${s.id})`);
+        const fallback =
+          nivel === "alto"
+            ? `Fortaleza marcada en ${s.nombre}.`
+            : nivel === "medio"
+              ? `Nivel funcional en ${s.nombre}, con espacio para crecer.`
+              : `${s.nombre}: área a fortalecer con apoyo psicopedagógico.`;
         const texto = textos?.[nivel] ?? fallback;
-        subInterps[s.id] = { pct, nivel, texto };
+        subInterps[s.id] = { pct, nivel, texto, faltaMapeo };
       }
     }
+
+    const ordenados = subList
+      .map((s) => ({ s, info: subInterps[s.id] }))
+      .filter((x) => x.info);
+    const fortalezas = ordenados.filter((x) => x.info.nivel === "alto");
+    const aFortalecer = ordenados.filter((x) => x.info.nivel === "bajo");
+
+    const exportarPDF = () => {
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const margin = 15;
+      let y = margin;
+      doc.setFillColor(30, 41, 59);
+      doc.rect(0, 0, pageW, 26, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text(test.nombre, margin, 12);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Resultado psicométrico · MEDD · ${new Date().toLocaleDateString("es-EC")}`, margin, 19);
+      y = 34;
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Puntaje total: ${resultado.puntaje_total}`, margin, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const interpL = doc.splitTextToSize(test.interpretacion[resultado.interpretacion] ?? "", pageW - 2 * margin);
+      doc.text(interpL, margin, y);
+      y += interpL.length * 4 + 4;
+
+      if (ordenados.length) {
+        autoTable(doc, {
+          startY: y,
+          head: [["Subescala", "Nivel", "%", "Interpretación"]],
+          body: ordenados.map(({ s, info }) => [s.nombre, info.nivel.toUpperCase(), `${info.pct}%`, info.texto]),
+          styles: { fontSize: 8, cellPadding: 2, valign: "top" },
+          headStyles: { fillColor: [30, 41, 59] },
+          columnStyles: { 0: { cellWidth: 40 }, 3: { cellWidth: 95 } },
+          didParseCell: (data) => {
+            if (data.section === "body" && data.column.index === 1) {
+              const v = String(data.cell.raw).toLowerCase();
+              if (v === "alto") data.cell.styles.fillColor = [220, 252, 231];
+              else if (v === "medio") data.cell.styles.fillColor = [254, 243, 199];
+              else if (v === "bajo") data.cell.styles.fillColor = [254, 226, 226];
+            }
+          },
+          margin: { left: margin, right: margin },
+        });
+      }
+      doc.save(`${test.id}-resultado.pdf`);
+      toast({ title: "PDF generado", description: "Descarga iniciada." });
+    };
+
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-6 w-6 text-primary" /> {test.nombre} — Resultado
+            <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="h-6 w-6 text-primary" /> {test.nombre} — Resultado
+              </span>
+              {ordenados.length > 0 && (
+                <Button size="sm" variant="outline" onClick={exportarPDF}>
+                  <FileDown className="h-4 w-4 mr-1" /> PDF
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -104,26 +176,61 @@ export default function StudentPsicometriaTest() {
               <p className="text-4xl font-bold text-primary">{resultado.puntaje_total}</p>
               <p className="text-sm font-medium mt-1 capitalize">Nivel global: {resultado.interpretacion}</p>
             </div>
-            {subList.length > 0 && Object.keys(subInterps).length > 0 && (
+
+            {faltantes.length > 0 && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Interpretaciones genéricas</AlertTitle>
+                <AlertDescription>
+                  Falta mapeo en NIVEL_TEXTOS para: {faltantes.join(", ")}. Se mostró texto de respaldo.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {(fortalezas.length > 0 || aFortalecer.length > 0) && (
+              <div className="grid sm:grid-cols-2 gap-3">
+                {fortalezas.length > 0 && (
+                  <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3">
+                    <p className="text-sm font-semibold flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+                      <Sparkles className="h-4 w-4" /> Fortalezas
+                    </p>
+                    <ul className="mt-1 text-xs space-y-0.5 list-disc pl-5">
+                      {fortalezas.map(({ s, info }) => (
+                        <li key={s.id}>{s.nombre} <span className="font-mono opacity-70">{info.pct}%</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {aFortalecer.length > 0 && (
+                  <div className="rounded-lg border border-red-500/40 bg-red-500/5 p-3">
+                    <p className="text-sm font-semibold flex items-center gap-1 text-red-700 dark:text-red-300">
+                      <Target className="h-4 w-4" /> Áreas a fortalecer
+                    </p>
+                    <ul className="mt-1 text-xs space-y-0.5 list-disc pl-5">
+                      {aFortalecer.map(({ s, info }) => (
+                        <li key={s.id}>{s.nombre} <span className="font-mono opacity-70">{info.pct}%</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {ordenados.length > 0 && (
               <div className="space-y-3">
                 <p className="text-sm font-medium">Desglose por subescala:</p>
-                {subList.map((s) => {
-                  const info = subInterps[s.id];
-                  if (!info) return null;
-                  const color = info.nivel === "alto" ? "bg-green-500" : info.nivel === "medio" ? "bg-amber-500" : "bg-red-500";
-                  return (
-                    <div key={s.id} className="border rounded-md p-3 space-y-1.5">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="font-medium">{s.nombre}</span>
-                        <span className="text-xs uppercase font-semibold">{info.nivel} · {info.pct}%</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full ${color}`} style={{ width: `${info.pct}%` }} />
-                      </div>
-                      <p className="text-xs text-muted-foreground">{info.texto}</p>
+                {ordenados.map(({ s, info }) => (
+                  <div key={s.id} className={`border rounded-md p-3 space-y-1.5 ${NIVEL_CARD_STYLE[info.nivel]}`}>
+                    <div className="flex justify-between items-center text-sm gap-2">
+                      <span className="font-medium">{s.nombre}</span>
+                      <NivelBadge nivel={info.nivel} porcentaje={info.pct} />
                     </div>
-                  );
-                })}
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className={`h-full ${NIVEL_BAR_COLOR[info.nivel]}`} style={{ width: `${info.pct}%` }} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{info.texto}</p>
+                  </div>
+                ))}
               </div>
             )}
             <p className="text-sm leading-relaxed bg-accent/30 p-3 rounded-md">
