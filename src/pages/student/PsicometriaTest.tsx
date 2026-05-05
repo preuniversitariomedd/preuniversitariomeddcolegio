@@ -6,11 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, FileDown, AlertTriangle, Sparkles, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { NIVEL_TEXTOS } from "@/lib/perfil360";
+import { NivelBadge, NIVEL_BAR_COLOR, NIVEL_CARD_STYLE, type Nivel } from "@/components/NivelBadge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function StudentPsicometriaTest() {
   const { testId } = useParams();
