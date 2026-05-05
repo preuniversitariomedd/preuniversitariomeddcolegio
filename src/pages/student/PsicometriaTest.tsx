@@ -10,6 +10,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
+import { NIVEL_TEXTOS } from "@/lib/perfil360";
 
 export default function StudentPsicometriaTest() {
   const { testId } = useParams();
