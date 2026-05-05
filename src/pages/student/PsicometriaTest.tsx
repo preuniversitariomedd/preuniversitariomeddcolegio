@@ -79,7 +79,9 @@ export default function StudentPsicometriaTest() {
         const raw = resultado.puntaje_por_subescala[s.id] ?? 0;
         const pct = max === min ? 0 : Math.round(((raw - min) / (max - min)) * 100);
         const nivel = pct < 40 ? "bajo" : pct <= 70 ? "medio" : "alto";
-        const texto = nivel === "alto" ? "Fortaleza marcada en esta dimensión." : nivel === "medio" ? "Nivel funcional con espacio para crecer." : "Área a fortalecer con apoyo psicopedagógico.";
+        const textos = NIVEL_TEXTOS[s.id];
+        const fallback = nivel === "alto" ? `Fortaleza marcada en ${s.nombre}.` : nivel === "medio" ? `Nivel funcional en ${s.nombre}, con espacio para crecer.` : `${s.nombre}: área a fortalecer con apoyo psicopedagógico.`;
+        const texto = textos?.[nivel] ?? fallback;
         subInterps[s.id] = { pct, nivel, texto };
       }
     }
