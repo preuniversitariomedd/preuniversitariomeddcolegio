@@ -71,7 +71,7 @@ export interface Perfil360 {
   }[];
 }
 
-const NIVEL_TEXTOS: Record<string, { bajo: string; medio: string; alto: string }> = {
+export const NIVEL_TEXTOS: Record<string, { bajo: string; medio: string; alto: string }> = {
   ME: { bajo: "Aún identificas y regulas emociones de forma irregular.", medio: "Reconoces y manejas emociones con esfuerzo consciente.", alto: "Madurez emocional consolidada: identificas, expresas y regulas con soltura." },
   MC: { bajo: "Predomina pensamiento concreto e inmediato.", medio: "Combinas razonamiento abstracto con apoyo de lo concreto.", alto: "Pensamiento abstracto, planificador y consecuencial bien desarrollado." },
   MS: { bajo: "Aún ajustas tu comportamiento social a contextos nuevos.", medio: "Lees contextos sociales con razonable claridad.", alto: "Madurez social adulta: lees contextos y sostienes relaciones de calidad." },
