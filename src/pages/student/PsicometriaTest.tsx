@@ -49,6 +49,8 @@ export default function StudentPsicometriaTest() {
   const [start] = useState(() => Date.now());
   const [resultado, setResultado] = useState<ReturnType<typeof calcularResultado> | null>(null);
   const [saving, setSaving] = useState(false);
+  const [mostrarFortalezas, setMostrarFortalezas] = usePersistedToggle(LS_MOSTRAR_FORTALEZAS, true);
+  const [mostrarAreas, setMostrarAreas] = usePersistedToggle(LS_MOSTRAR_AREAS, true);
 
   useEffect(() => {
     if (test && test.estado !== "completo") navigate("/student/psicometria");
