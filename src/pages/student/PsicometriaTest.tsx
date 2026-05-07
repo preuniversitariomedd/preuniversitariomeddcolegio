@@ -111,7 +111,7 @@ export default function StudentPsicometriaTest() {
         const nivel: Nivel = pct < 40 ? "bajo" : pct <= 70 ? "medio" : "alto";
         const textos = NIVEL_TEXTOS[s.id];
         const faltaMapeo = !textos;
-        if (faltaMapeo) faltantes.push(`${s.nombre} (${s.id})`);
+        if (faltaMapeo) faltantes.push(s.id);
         const fallback =
           nivel === "alto"
             ? `Fortaleza marcada en ${s.nombre}.`
