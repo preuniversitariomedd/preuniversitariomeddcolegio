@@ -18,25 +18,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const LS_MOSTRAR_FORTALEZAS = "medd:mostrarFortalezas";
-const LS_MOSTRAR_AREAS = "medd:mostrarAreas";
+import { usePersistedToggle } from "@/hooks/usePersistedToggle";
 
-function usePersistedToggle(key: string, defaultValue = true) {
-  const [value, setValue] = useState(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw === null ? defaultValue : raw === "1";
-    } catch {
-      return defaultValue;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, value ? "1" : "0");
-    } catch { /* noop */ }
-  }, [key, value]);
-  return [value, setValue] as const;
-}
+export const LS_MOSTRAR_FORTALEZAS = "medd:mostrarFortalezas";
+export const LS_MOSTRAR_AREAS = "medd:mostrarAreas";
 
 export default function StudentPsicometriaTest() {
   const { testId } = useParams();
