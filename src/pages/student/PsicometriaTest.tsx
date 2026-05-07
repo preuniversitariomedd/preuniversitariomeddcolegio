@@ -211,31 +211,58 @@ export default function StudentPsicometriaTest() {
             )}
 
             {(fortalezas.length > 0 || aFortalecer.length > 0) && (
-              <div className="grid sm:grid-cols-2 gap-3">
-                {fortalezas.length > 0 && (
-                  <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3">
-                    <p className="text-sm font-semibold flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
-                      <Sparkles className="h-4 w-4" /> Fortalezas
-                    </p>
-                    <ul className="mt-1 text-xs space-y-0.5 list-disc pl-5">
-                      {fortalezas.map(({ s, info }) => (
-                        <li key={s.id}>{s.nombre} <span className="font-mono opacity-70">{info.pct}%</span></li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {aFortalecer.length > 0 && (
-                  <div className="rounded-lg border border-red-500/40 bg-red-500/5 p-3">
-                    <p className="text-sm font-semibold flex items-center gap-1 text-red-700 dark:text-red-300">
-                      <Target className="h-4 w-4" /> Áreas a fortalecer
-                    </p>
-                    <ul className="mt-1 text-xs space-y-0.5 list-disc pl-5">
-                      {aFortalecer.map(({ s, info }) => (
-                        <li key={s.id}>{s.nombre} <span className="font-mono opacity-70">{info.pct}%</span></li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  {fortalezas.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Switch id="toggle-fortalezas" checked={mostrarFortalezas} onCheckedChange={setMostrarFortalezas} />
+                      <Label htmlFor="toggle-fortalezas" className="flex items-center gap-1 text-xs font-medium cursor-pointer">
+                        {mostrarFortalezas ? <Eye className="h-3.5 w-3.5 text-emerald-500" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
+                        Fortalezas ({fortalezas.length})
+                      </Label>
+                    </div>
+                  )}
+                  {aFortalecer.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Switch id="toggle-areas" checked={mostrarAreas} onCheckedChange={setMostrarAreas} />
+                      <Label htmlFor="toggle-areas" className="flex items-center gap-1 text-xs font-medium cursor-pointer">
+                        {mostrarAreas ? <Eye className="h-3.5 w-3.5 text-red-500" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
+                        Áreas a fortalecer ({aFortalecer.length})
+                      </Label>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {fortalezas.length > 0 && (
+                    <div className={`overflow-hidden transition-all duration-500 ease-in-out ${mostrarFortalezas ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
+                      <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3">
+                        <p className="text-sm font-semibold flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+                          <Sparkles className="h-4 w-4" /> Fortalezas
+                        </p>
+                        <ul className="mt-1 text-xs space-y-0.5 list-disc pl-5">
+                          {fortalezas.map(({ s, info }) => (
+                            <li key={s.id}>{s.nombre} <span className="font-mono opacity-70">{info.pct}%</span></li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                  {aFortalecer.length > 0 && (
+                    <div className={`overflow-hidden transition-all duration-500 ease-in-out ${mostrarAreas ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
+                      <div className="rounded-lg border border-red-500/40 bg-red-500/5 p-3">
+                        <p className="text-sm font-semibold flex items-center gap-1 text-red-700 dark:text-red-300">
+                          <Target className="h-4 w-4" /> Áreas a fortalecer
+                        </p>
+                        <ul className="mt-1 text-xs space-y-0.5 list-disc pl-5">
+                          {aFortalecer.map(({ s, info }) => (
+                            <li key={s.id}>{s.nombre} <span className="font-mono opacity-70">{info.pct}%</span></li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
