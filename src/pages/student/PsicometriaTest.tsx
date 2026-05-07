@@ -202,13 +202,46 @@ export default function StudentPsicometriaTest() {
             </div>
 
             {faltantes.length > 0 && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Interpretaciones genéricas</AlertTitle>
-                <AlertDescription>
-                  Falta mapeo en NIVEL_TEXTOS para: {faltantes.join(", ")}. Se mostró texto de respaldo.
-                </AlertDescription>
-              </Alert>
+              <Collapsible>
+                <Alert variant="destructive" data-testid="alert-faltantes">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Interpretaciones genéricas ({faltantes.length})</AlertTitle>
+                  <AlertDescription>
+                    <p className="mb-2">Faltan mapeos en NIVEL_TEXTOS. Se está usando texto de respaldo.</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <CollapsibleTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-7 text-xs">
+                          <ChevronDown className="h-3.5 w-3.5 mr-1" /> Ver IDs
+                        </Button>
+                      </CollapsibleTrigger>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={async () => {
+                          const txt = faltantes.join("\n");
+                          try {
+                            await navigator.clipboard.writeText(txt);
+                            toast({ title: "Copiado", description: `${faltantes.length} IDs al portapapeles.` });
+                          } catch {
+                            toast({ title: "No se pudo copiar", description: txt, variant: "destructive" });
+                          }
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                      <ul className="mt-2 text-xs font-mono space-y-0.5 max-h-48 overflow-y-auto">
+                        {faltantes.map((id) => {
+                          const s = subList.find((x) => x.id === id);
+                          return <li key={id}>{id} {s ? `— ${s.nombre}` : ""}</li>;
+                        })}
+                      </ul>
+                    </CollapsibleContent>
+                  </AlertDescription>
+                </Alert>
+              </Collapsible>
             )}
 
             {(fortalezas.length > 0 || aFortalecer.length > 0) && (
