@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight, CheckCircle2, FileDown, AlertTriangle, Sparkles, Target } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, ArrowRight, CheckCircle2, FileDown, AlertTriangle, Sparkles, Target, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +16,26 @@ import { NivelBadge, NIVEL_BAR_COLOR, NIVEL_CARD_STYLE, type Nivel } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+const LS_MOSTRAR_FORTALEZAS = "medd:mostrarFortalezas";
+const LS_MOSTRAR_AREAS = "medd:mostrarAreas";
+
+function usePersistedToggle(key: string, defaultValue = true) {
+  const [value, setValue] = useState(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw === null ? defaultValue : raw === "1";
+    } catch {
+      return defaultValue;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, value ? "1" : "0");
+    } catch { /* noop */ }
+  }, [key, value]);
+  return [value, setValue] as const;
+}
 
 export default function StudentPsicometriaTest() {
   const { testId } = useParams();
