@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, ArrowRight, CheckCircle2, FileDown, AlertTriangle, Sparkles, Target, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, FileDown, AlertTriangle, Sparkles, Target, Eye, EyeOff, Copy, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -17,25 +18,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const LS_MOSTRAR_FORTALEZAS = "medd:mostrarFortalezas";
-const LS_MOSTRAR_AREAS = "medd:mostrarAreas";
+import { usePersistedToggle } from "@/hooks/usePersistedToggle";
 
-function usePersistedToggle(key: string, defaultValue = true) {
-  const [value, setValue] = useState(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw === null ? defaultValue : raw === "1";
-    } catch {
-      return defaultValue;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, value ? "1" : "0");
-    } catch { /* noop */ }
-  }, [key, value]);
-  return [value, setValue] as const;
-}
+export const LS_MOSTRAR_FORTALEZAS = "medd:mostrarFortalezas";
+export const LS_MOSTRAR_AREAS = "medd:mostrarAreas";
 
 export default function StudentPsicometriaTest() {
   const { testId } = useParams();
@@ -111,7 +97,7 @@ export default function StudentPsicometriaTest() {
         const nivel: Nivel = pct < 40 ? "bajo" : pct <= 70 ? "medio" : "alto";
         const textos = NIVEL_TEXTOS[s.id];
         const faltaMapeo = !textos;
-        if (faltaMapeo) faltantes.push(`${s.nombre} (${s.id})`);
+        if (faltaMapeo) faltantes.push(s.id);
         const fallback =
           nivel === "alto"
             ? `Fortaleza marcada en ${s.nombre}.`
@@ -201,13 +187,46 @@ export default function StudentPsicometriaTest() {
             </div>
 
             {faltantes.length > 0 && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Interpretaciones genéricas</AlertTitle>
-                <AlertDescription>
-                  Falta mapeo en NIVEL_TEXTOS para: {faltantes.join(", ")}. Se mostró texto de respaldo.
-                </AlertDescription>
-              </Alert>
+              <Collapsible>
+                <Alert variant="destructive" data-testid="alert-faltantes">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Interpretaciones genéricas ({faltantes.length})</AlertTitle>
+                  <AlertDescription>
+                    <p className="mb-2">Faltan mapeos en NIVEL_TEXTOS. Se está usando texto de respaldo.</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <CollapsibleTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-7 text-xs">
+                          <ChevronDown className="h-3.5 w-3.5 mr-1" /> Ver IDs
+                        </Button>
+                      </CollapsibleTrigger>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={async () => {
+                          const txt = faltantes.join("\n");
+                          try {
+                            await navigator.clipboard.writeText(txt);
+                            toast({ title: "Copiado", description: `${faltantes.length} IDs al portapapeles.` });
+                          } catch {
+                            toast({ title: "No se pudo copiar", description: txt, variant: "destructive" });
+                          }
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                      <ul className="mt-2 text-xs font-mono space-y-0.5 max-h-48 overflow-y-auto">
+                        {faltantes.map((id) => {
+                          const s = subList.find((x) => x.id === id);
+                          return <li key={id}>{id} {s ? `— ${s.nombre}` : ""}</li>;
+                        })}
+                      </ul>
+                    </CollapsibleContent>
+                  </AlertDescription>
+                </Alert>
+              </Collapsible>
             )}
 
             {(fortalezas.length > 0 || aFortalecer.length > 0) && (
